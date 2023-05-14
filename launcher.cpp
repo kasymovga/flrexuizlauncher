@@ -119,7 +119,7 @@ void Launcher::update() {
 		totalSize += updateIndex.items[i].size;
 	}
 	char question[256];
-	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / 103);
+	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
 	if (gui.askYesNo(question)) {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
 			gui.setProgress(i * 100 / updateIndex.itemsCount);
