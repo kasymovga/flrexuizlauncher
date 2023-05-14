@@ -30,9 +30,9 @@ FSChar* FS::fromUTF8(const char *u8) {
 	FSChar *r = new FSChar[strlen(u8) + 1];
 	strcpy(r, u8);
 #else
-	int n = mblen(u8, strlen(u8));
+	int n = strlen(u8);
 	FSChar *r = new FSChar[n + 1];
-	mbstowcs(r, u8, n);
+	n = mbstowcs(r, u8, n);
 	r[n] = 0;
 #endif
 	for (FSChar *c = r; *c; ++c) {
@@ -160,6 +160,14 @@ bool FS::directoryExists(const FSChar *path) {
 
 bool FS::directoryMake(const FSChar *path) {
 	int n = FS::length(path);
+#ifdef _WIN32
+	//drive, no need to create
+	if (!wcschr(path, FS_DELIMETER)) {
+		FSChar *colon = wcschr(path, L':');
+		if (*colon && !colon[1])
+			return true;
+	}
+#endif
 	if (FS::directoryExists(path))
 		return true;
 
