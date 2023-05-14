@@ -8,12 +8,13 @@ static const FSChar* settings_location() {
 	const FSChar *home = getenv("HOME");
 	if (!home) home = "/tmp"; //no idea what else can be done here
 #else
-	const FSChar *home = _wgetenv(L"USERPROFILE");
+	const FSChar *home = _wgetenv(L"APPDATA");
+	if (!home) home = _wgetenv(L"USERPROFILE");
 	if (!home) home = L"."; //no idea what else can be done here
 #endif
 	int path_size = FS::length(home) + 32;
 #ifdef _WIN32
-	FSChar *path = FS::pathConcat(home, "AppData" FS_DELIMETER_STRING "flrl.cfg");;
+	FSChar *path = FS::pathConcat(home, "RexuizLauncher" FS_DELIMETER_STRING "flrl.cfg");;
 #else
 #ifdef __APPLE__
 	FSChar *path = FS::pathConcat(home, "Library" FS_DELIMETER_STRING "Preferences" FS_DELIMETER_STRING "flrl.cfg");;
