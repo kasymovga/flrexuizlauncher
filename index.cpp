@@ -105,8 +105,8 @@ bool Index::loadFromFile(FSChar *path) {
 	bool r = false;
 	FILE *file = NULL;
 	char *line = NULL;
-	size_t lineLength;
-	size_t lineLengthActual;
+	size_t lineLength = 0;
+	ssize_t lineLengthActual;
 	if (!(file = FS::open(path, "r"))) goto finish;
 	#ifdef _WIN32
 	lineLength = 4096;
@@ -116,10 +116,10 @@ bool Index::loadFromFile(FSChar *path) {
 	#else
 	while ((lineLengthActual = getline(&line, &lineLength, file)) > 0) {
 	#endif
-		if (lineLengthActual < 1) continue;
 		if (line[lineLengthActual - 1] == '\n')
 			line[lineLengthActual - 1] = 0;
 
+		if (!line[0]) continue;
 		itemAdd(line);
 	}
 	if (ferror(file)) goto finish;
