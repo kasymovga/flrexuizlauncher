@@ -117,11 +117,17 @@ FSChar *FS::pathConcat(const FSChar *path1, const FSChar *path2) {
 #ifdef FS_CHAR_IS_8BIT
 	int len = FS::length(path1) + FS::length(path2) + 2;
 	FSChar *out = new FSChar[len];
-	snprintf(out, len, "%s%s%s", path1, FS_DELIMETER_STRING, path2);
+	if (path1[FS::length(path1) - 1] == FS_DELIMETER)
+		snprintf(out, len, "%s%s", path1, path2);
+	else
+		snprintf(out, len, "%s%s%s", path1, FS_DELIMETER_STRING, path2);
 #else
 	int len = FS::length(path1) + FS::length(path2) + 2;
 	FSChar *out = new FSChar[len];
-	swprintf(out, len, L"%s%s%s", path1, FS_DELIMETER_STRING, path2);
+	if (path1[FS::length(path1) - 1] == FS_DELIMETER)
+		swprintf(out, len, L"%s%s", path1, path2);
+	else
+		swprintf(out, len, L"%s%s%s", path1, FS_DELIMETER_STRING, path2);
 #endif
 	return out;
 }
@@ -161,10 +167,15 @@ bool FS::directoryMake(const FSChar *path) {
 	FS::copy(pathCopy, path, n);
 	pathCopy[n] = 0;
 	FS::stripToParent(pathCopy);
+	n = FS::length(pathCopy) - 1;
+	while (n && pathCopy[n] == FS_DELIMETER) {
+		pathCopy[n] = 0;
+		--n;
+	}
 	if (pathCopy[0])
-		if (!FS::directoryMake(pathCopy))
+		if (!FS::directoryMake(pathCopy)) {
 			return false;
-
+		}
 #ifdef FS_CHAR_IS_8BIT
 	return !mkdir(path, 0755);
 #else
