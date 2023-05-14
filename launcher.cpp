@@ -122,6 +122,7 @@ void Launcher::update() {
 	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
 	if (gui.askYesNo(question)) {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
+			printf("Downloading %s\n", updateIndex.items[i].path);
 			gui.setProgress(i * 100 / updateIndex.itemsCount);
 			FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
 			FSChar *pathTmp = FS::concat(path, ".tmp");
@@ -141,7 +142,7 @@ void Launcher::update() {
 					f = NULL;
 					gui.setInfoSecondary("Validating...");
 					if (FS::size(pathTmp) == updateIndex.items[i].size && Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
-						if (FS::move(pathTmp, path)) {
+						if (!FS::move(pathTmp, path)) {
 							i = updateIndex.itemsCount;
 							gui.error("File saving failed");
 						}
