@@ -43,9 +43,9 @@ bool Sign::checkFileHash(FSChar *path, const char *hash, int hashSize) {
 	if (mbedtls_md_starts(&md_ctx))
 		goto finish;
 
-	if (!(f = FS::open(path, "r")))
+	if (!(f = FS::open(path, "rb"))) {
 		goto finish;
-
+	}
 	char buffer[4096];
 	int n;
 	while ((n = fread(buffer, 1, 4096, f)) > 0) {

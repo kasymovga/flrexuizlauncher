@@ -127,7 +127,7 @@ void Launcher::update() {
 			FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
 			FSChar *pathTmp = FS::concat(path, ".tmp");
 			FS::directoryMakeFor(pathTmp);
-			FILE *f = FS::open(pathTmp, "w");
+			FILE *f = FS::open(pathTmp, "wb");
 			if (!f) {
 				i = updateIndex.itemsCount;
 				gui.error("Open file faild");
@@ -141,15 +141,21 @@ void Launcher::update() {
 					fclose(f);
 					f = NULL;
 					gui.setInfoSecondary("Validating...");
-					if (FS::size(pathTmp) == updateIndex.items[i].size && Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
-						if (!FS::move(pathTmp, path)) {
+					if (FS::size(pathTmp) == updateIndex.items[i].size) {
+						if (Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
+							if (!FS::move(pathTmp, path)) {
+								i = updateIndex.itemsCount;
+								gui.error("File saving failed");
+							}
+						} else {
 							i = updateIndex.itemsCount;
-							gui.error("File saving failed");
+							FS::remove(pathTmp);
+							gui.error("Wrong checksum");
 						}
 					} else {
 						i = updateIndex.itemsCount;
-						FS::remove(pathTmp);
-						gui.error("Wrong checksum");
+						//FS::remove(pathTmp);
+						gui.error("Wrong file size");
 					}
 				} else {
 					printf("Downloading of %s failed\n", link);
@@ -221,6 +227,10 @@ void Launcher::execute() {
 	FSChar *executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
 	PROCESS_INFORMATION pi;
+	STARTUPINFOW si;
+	memset(&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	memset(&pi, 0, sizeof(pi));
 	FSChar *args = FS::fromUTF8("rexuiz.exe");
 	FSChar *argsNew;
 	for (int i = 1; i < argc; ++i) {
@@ -239,7 +249,7 @@ void Launcher::execute() {
 			0,             // creation flags
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
-			NULL,  // STARTUPINFO pointer
+			&si,  // STARTUPINFO pointer
 			&pi);  // receives PROCESS_INFORMATION
 	// If an error occurs, exit the application.
 	if (bSuccess) {

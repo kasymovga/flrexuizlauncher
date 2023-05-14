@@ -33,7 +33,10 @@ FSChar* FS::fromUTF8(const char *u8) {
 	int n = strlen(u8);
 	FSChar *r = new FSChar[n + 1];
 	n = mbstowcs(r, u8, n);
-	r[n] = 0;
+	if (n > 0)
+		r[n] = 0;
+	else
+		r[0] = 0;
 #endif
 	for (FSChar *c = r; *c; ++c) {
 		if (*c == '/') *c = FS_DELIMETER;
@@ -95,7 +98,8 @@ FILE *FS::open(const FSChar* path, const char *mode) {
 #else
 	int n = strlen(mode);
 	wchar_t wmode[n + 1];
-	mbstowcs(wmode, mode, n + 1);
+	mbstowcs(wmode, mode, n);
+	wmode[n] = 0;
 	return _wfopen(path, wmode);
 #endif
 }
@@ -108,7 +112,7 @@ FSChar *FS::concat(const FSChar *path1, const FSChar *path2) {
 #else
 	int len = FS::length(path1) + FS::length(path2) + 1;
 	FSChar *out = new FSChar[len];
-	swprintf(out, len, L"%s%s", path1, path2);
+	swprintf(out, len, L"%ls%ls", path1, path2);
 #endif
 	return out;
 }
@@ -125,9 +129,9 @@ FSChar *FS::pathConcat(const FSChar *path1, const FSChar *path2) {
 	int len = FS::length(path1) + FS::length(path2) + 2;
 	FSChar *out = new FSChar[len];
 	if (path1[FS::length(path1) - 1] == FS_DELIMETER)
-		swprintf(out, len, L"%s%s", path1, path2);
+		swprintf(out, len, L"%ls%ls", path1, path2);
 	else
-		swprintf(out, len, L"%s%s%s", path1, FS_DELIMETER_STRING, path2);
+		swprintf(out, len, L"%ls%ls%ls", path1, FS_DELIMETER_STRING, path2);
 #endif
 	return out;
 }
@@ -229,7 +233,7 @@ FSChar *FS::duplicate(const FSChar *path) {
 
 int FS::size(const FSChar *path) {
 	int r;
-	FILE *file = FS::open(path, "r");
+	FILE *file = FS::open(path, "rb");
 	if (!file) return -1;
 	fseek(file, 0, SEEK_END);
 	r = ftell(file);

@@ -28,7 +28,7 @@ bool Settings::save() {
 	const FSChar *path = settings_location();
 	FS::directoryMakeFor(path);
 	bool r = false;
-	FILE *f = FS::open(path, "w");
+	FILE *f = FS::open(path, "wb");
 	const char *path_utf8 = NULL;
 	if (!f) goto finish;
 	if (installPath) {
@@ -46,7 +46,7 @@ finish:
 
 bool Settings::load() {
 	const FSChar *path = settings_location();
-	FILE *f = FS::open(path, "r");
+	FILE *f = FS::open(path, "rb");
 	char *line = NULL;
 	size_t lineLength = 0;
 	ssize_t lineLengthActual;
@@ -58,11 +58,15 @@ bool Settings::load() {
 	while (fgets(line, lineLength, f)) {
 		lineLengthActual = strlen(line);
 	#else
-	while ((lineLengthActual = getline(&line, &lineLength, f)) > 0) {
+	while ((lineLengthActual = getline(&line, &lineLength, f)) >= 0) {
 	#endif
 		if (!line[0]) continue;
 		if (line[lineLengthActual - 1] == '\n') {
 			line[lineLengthActual - 1] = 0;
+		}
+		if (!line[0]) continue;
+		if (lineLengthActual >= 2 && line[lineLengthActual - 2] == '\r') {
+			line[lineLengthActual - 2] = 0;
 		}
 		if (!strncmp(line, "install_path=", 13)) {
 			if (installPath) delete[] installPath;

@@ -107,17 +107,22 @@ bool Index::loadFromFile(FSChar *path) {
 	char *line = NULL;
 	size_t lineLength = 0;
 	ssize_t lineLengthActual;
-	if (!(file = FS::open(path, "r"))) goto finish;
+	if (!(file = FS::open(path, "rb"))) goto finish;
 	#ifdef _WIN32
 	lineLength = 4096;
 	line = new char[lineLength];
 	while (fgets(line, lineLength, file)) {
 		lineLengthActual = strlen(line);
 	#else
-	while ((lineLengthActual = getline(&line, &lineLength, file)) > 0) {
+	while ((lineLengthActual = getline(&line, &lineLength, file)) >= 0) {
 	#endif
+		if (!line[0]) continue;
 		if (line[lineLengthActual - 1] == '\n')
 			line[lineLengthActual - 1] = 0;
+
+		if (!line[0]) continue;
+		if (lineLengthActual >= 2 && line[lineLengthActual - 2] == '\r')
+			line[lineLengthActual - 2] = 0;
 
 		if (!line[0]) continue;
 		itemAdd(line);
@@ -134,7 +139,7 @@ bool Index::saveToFile(const FSChar *path) {
 	FILE *file = NULL;
 	bool r = false;
 	FSChar *tmpPath = FS::concat(path, ".tmp");
-	if (!(file = FS::open(tmpPath, "w"))) goto finish;
+	if (!(file = FS::open(tmpPath, "wb"))) goto finish;
 	for (int i = 0; i < itemsCount; ++i) {
 		if (fprintf(file, "%s|%i|%s\n", items[i].hash, items[i].size, items[i].path) < 0) goto finish;
 	}
