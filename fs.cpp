@@ -6,6 +6,8 @@
 #ifdef _WIN32
 #include <libloaderapi.h>
 #include <windows.h>
+#include <shlwapi.h>
+#include <io.h>
 #else
 #include <sys/stat.h>
 #endif
@@ -28,7 +30,7 @@ FSChar* FS::fromUTF8(const char *u8) {
 	FSChar *r = new FSChar[strlen(u8) + 1];
 	strcpy(r, u8);
 #else
-	int n = mblen(u8);
+	int n = mblen(u8, strlen(u8));
 	FSChar *r = new FSChar[n + 1];
 	mbstowcs(r, u8, n);
 	r[n] = 0;
@@ -55,7 +57,7 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 		delete[] r;
 	}
 	return r;
-#endif
+#else
 	char *tmp = realpath(u8, NULL);
 	if (!tmp) return NULL;
 	r = new FSChar[
@@ -69,6 +71,7 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 	strcpy(r, tmp);
 	free(tmp);
 	return r;
+#endif
 }
 
 void FS::stripToParent(FSChar* path) {
@@ -91,7 +94,7 @@ FILE *FS::open(const FSChar* path, const char *mode) {
 	return fopen(path, mode);
 #else
 	int n = strlen(mode);
-	wchar_t *wmode[n + 1];
+	wchar_t wmode[n + 1];
 	mbstowcs(wmode, mode, n + 1);
 	return _wfopen(path, wmode);
 #endif
@@ -105,7 +108,7 @@ FSChar *FS::concat(const FSChar *path1, const FSChar *path2) {
 #else
 	int len = FS::length(path1) + FS::length(path2) + 1;
 	FSChar *out = new FSChar[len];
-	swprintf(out, len, "%s%s", path1, path2);
+	swprintf(out, len, L"%s%s", path1, path2);
 #endif
 	return out;
 }
@@ -118,7 +121,7 @@ FSChar *FS::pathConcat(const FSChar *path1, const FSChar *path2) {
 #else
 	int len = FS::length(path1) + FS::length(path2) + 2;
 	FSChar *out = new FSChar[len];
-	swprintf(out, len, "%s%s%s", path1, FS_DELIMETER_STRING, path2);
+	swprintf(out, len, L"%s%s%s", path1, FS_DELIMETER_STRING, path2);
 #endif
 	return out;
 }
@@ -145,7 +148,7 @@ bool FS::directoryExists(const FSChar *path) {
 	stat(path, &s);
 	return S_ISDIR(s.st_mode);
 #else
-	return DirectoryExistsW(path);
+	return PathIsDirectoryW(path);
 #endif
 }
 
@@ -165,7 +168,7 @@ bool FS::directoryMake(const FSChar *path) {
 #ifdef FS_CHAR_IS_8BIT
 	return !mkdir(path, 0755);
 #else
-	return CreateDirectory(path, NULL);
+	return CreateDirectoryW(path, NULL);
 #endif
 }
 

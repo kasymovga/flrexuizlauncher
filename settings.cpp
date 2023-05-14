@@ -8,8 +8,8 @@ static const FSChar* settings_location() {
 	const FSChar *home = getenv("HOME");
 	if (!home) home = "/tmp"; //no idea what else can be done here
 #else
-	const FSChar *home = _wgetenv("USERPROFILE");
-	if (!home) home = "."; //no idea what else can be done here
+	const FSChar *home = _wgetenv(L"USERPROFILE");
+	if (!home) home = L"."; //no idea what else can be done here
 #endif
 	int path_size = FS::length(home) + 32;
 #ifdef _WIN32
@@ -43,6 +43,7 @@ finish:
 	return r;
 }
 
+
 bool Settings::load() {
 	const FSChar *path = settings_location();
 	FILE *f = FS::open(path, "r");
@@ -51,7 +52,14 @@ bool Settings::load() {
 	ssize_t lineLengthActual;
 	bool r = false;
 	if (!f) goto finish;;
+	#ifdef _WIN32
+	lineLength = 4096;
+	line = new char[lineLength];
+	while (fgets(line, lineLength, f)) {
+		lineLengthActual = strlen(line);
+	#else
 	while ((lineLengthActual = getline(&line, &lineLength, f)) > 0) {
+	#endif
 		if (!line[0]) continue;
 		if (line[lineLengthActual - 1] == '\n') {
 			line[lineLengthActual - 1] = 0;

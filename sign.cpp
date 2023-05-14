@@ -40,7 +40,7 @@ bool Sign::checkFileHash(FSChar *path, const char *hash, int hashSize) {
 	if (mbedtls_md_setup(&md_ctx, md_info, 0))
 		goto finish;
 
-	if (md_info->starts_func(md_ctx.md_ctx))
+	if (md_info->starts_func(md_ctx.MBEDTLS_PRIVATE(md_ctx)))
 		goto finish;
 
 	if (!(f = FS::open(path, "r")))
@@ -49,10 +49,10 @@ bool Sign::checkFileHash(FSChar *path, const char *hash, int hashSize) {
 	char buffer[4096];
 	int n;
 	while ((n = fread(buffer, 1, 4096, f)) > 0) {
-		if (md_info->update_func(md_ctx.md_ctx, (const unsigned char *)buffer, n))
+		if (md_info->update_func(md_ctx.MBEDTLS_PRIVATE(md_ctx), (const unsigned char *)buffer, n))
 			goto finish;
 	}
-	if (md_info->finish_func(md_ctx.md_ctx, checkhash_bin))
+	if (md_info->finish_func(md_ctx.MBEDTLS_PRIVATE(md_ctx), checkhash_bin))
 		goto finish;
 
 	for (int i = 0; i < 16; i++) {
@@ -75,13 +75,13 @@ bool Sign::verify(const char *data, int dataSize, const char *sign, int signSize
 	if (mbedtls_md_setup(&md_ctx, md_info, 0))
 		goto finish;
 
-	if (md_info->starts_func(md_ctx.md_ctx))
+	if (md_info->starts_func(md_ctx.MBEDTLS_PRIVATE(md_ctx)))
 		goto finish;
 
-	if (md_info->update_func(md_ctx.md_ctx, (const unsigned char *)data, dataSize))
+	if (md_info->update_func(md_ctx.MBEDTLS_PRIVATE(md_ctx), (const unsigned char *)data, dataSize))
 		goto finish;
 
-	if (md_info->finish_func(md_ctx.md_ctx, hash))
+	if (md_info->finish_func(md_ctx.MBEDTLS_PRIVATE(md_ctx), hash))
 		goto finish;
 
 	r = verifyHash(hash, sizeof(hash), sign, signSize);

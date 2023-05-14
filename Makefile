@@ -1,23 +1,29 @@
-CPP=c++
+CXX=c++
 CC=cc
-COMPILE=$(CPP) -Wall -g -std=c++03 -c -o
-LINK=$(CPP) -static-libstdc++ -o
+COMPILE=$(CXX) $(CXXFLAGS) -Wall -g -std=c++03 -c -o
+LINK=$(CXX) $(LDFLAGS) -static-libstdc++ -o
 LINK_FLAGS_FLTK=`fltk-config --use-images --ldflags`
 COMPILE_FLAGS_FLTK=`fltk-config --use-images --cflags`
-LINK_FLAGS_CURL=`pkg-config --libs libcurl`
+LINK_FLAGS_CURL=`pkg-config --static --libs libcurl`
 COMPILE_FLAGS_CURL=`pkg-config --cflags libcurl`
 LINK_MBEDTLS_FLAGS=-lmbedcrypto
 UNAME := $(shell uname)
-
 ifeq ($(UNAME), Windows)
-FLREXUIZLAUNCHER = flrexuizlauncher.exe
+TARGET ?= windows
 else
-FLREXUIZLAUNCHER = flrexuizlauncher
+endif
+
+ifeq ($(TARGET), windows)
+FLREXUIZLAUNCHER=flrexuizlauncher.exe
+LINK_OS_FLAGS=-lshlwapi
+else
+FLREXUIZLAUNCHER=flrexuizlauncher
+LINK_OS_FLAGS=
 endif
 
 .PHONY: all clean
 
-all: flrexuizlauncher
+all: $(FLREXUIZLAUNCHER)
 
 clean:
 	rm -f *.o rexuiz_icon.h rexuiz_logo.h rexuiz_pub_key.h $(FLREXUIZLAUNCHER)
@@ -41,7 +47,7 @@ fs.o: fs.cpp fs.h
 	$(COMPILE) $@ $<
 
 $(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o miniz.o index.o
-	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS)
+	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS) $(LINK_OS_FLAGS)
 
 rexuiz_logo.h: rexuiz_logo.png
 	xxd -n rexuiz_logo -i $< $@

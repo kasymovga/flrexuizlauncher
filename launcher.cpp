@@ -6,11 +6,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 #ifdef _WIN32
 #include <processthreadsapi.h>
+#include <windows.h>
 #else
 #include <unistd.h>
+#include <sys/wait.h>
 #endif
 
 Launcher::Launcher(int argc, char **argv) {
@@ -63,7 +64,9 @@ void Launcher::update() {
 		gui.error("Update not available");
 		return;
 	}
+#ifndef _WIN32
 	const char *ext;
+#endif
 	for (int i = 0; i < newIndex.itemsCount; ++i) {
 #ifndef _WIN32
 		if ((ext = strrchr(newIndex.items[i].path, '.'))) {
@@ -216,6 +219,33 @@ void Launcher::repoSearch() {
 void Launcher::execute() {
 	FSChar *executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
+	PROCESS_INFORMATION pi;
+	FSChar *args = FS::fromUTF8("rexuiz.exe");
+	FSChar *argsNew;
+	for (int i = 1; i < argc; ++i) {
+		argsNew = FS::concat(args, " ");
+		delete[] args;
+		args = argsNew;
+		argsNew = FS::concat(args, argv[i]);
+		delete[] args;
+		args = argsNew;
+	}
+	BOOL bSuccess = CreateProcessW(executablePath,
+			args,     // command line
+			NULL,          // process security attributes
+			NULL,          // primary thread security attributes
+			TRUE,          // handles are inherited
+			0,             // creation flags
+			NULL,          // use parent's environment
+			NULL,          // use parent's current directory
+			NULL,  // STARTUPINFO pointer
+			&pi);  // receives PROCESS_INFORMATION
+	// If an error occurs, exit the application.
+	if (bSuccess) {
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
 #else
 	int pid;
 	gui.hide();
@@ -244,17 +274,13 @@ int Launcher::run() {
 	FSChar *startLocation = FS::getBinaryLocation(argv[0]);
 	FS::stripToParent(startLocation);
 	settings.load();
-	printf("settings.installPath = %s\n", settings.installPath);
 	if (Rexuiz::presentsInDirectory(startLocation)) {
-		printf("Rexuiz is presents in %s\n", startLocation);
 		updater = true;
 		installPath = FS::duplicate(startLocation);
 	} else {
-		printf("Rexuiz is not presents in %s\n", startLocation);
 		updater = false;
 		if (settings.installPath && settings.installPath[0]) {
 			installPath = FS::duplicate(settings.installPath);
-			printf("Get install path from saved settings: %s\n", installPath);
 		}
 	}
 	if (!installPath || !installPath[0]) {
@@ -266,7 +292,6 @@ int Launcher::run() {
 	if (!Rexuiz::presentsInDirectory(installPath)) {
 		installRequired = true;
 	}
-	printf("Settings install path to %s\n", installPath);
 	settings.setInstallPath(installPath);
 	indexPath = FS::pathConcat(installPath, "/index.lst");
 	if (!currentIndex.loadFromFile(indexPath)) {

@@ -106,11 +106,19 @@ bool Index::loadFromFile(FSChar *path) {
 	FILE *file = NULL;
 	char *line = NULL;
 	size_t lineLength;
+	size_t lineLengthActual;
 	if (!(file = FS::open(path, "r"))) goto finish;
-	while (getline(&line, &lineLength, file) > 0) {
-		if (lineLength < 1) continue;
-		if (line[lineLength - 1] == '\n')
-			line[lineLength - 1] = 0;
+	#ifdef _WIN32
+	lineLength = 4096;
+	line = new char[lineLength];
+	while (fgets(line, lineLength, file)) {
+		lineLengthActual = strlen(line);
+	#else
+	while ((lineLengthActual = getline(&line, &lineLength, file)) > 0) {
+	#endif
+		if (lineLengthActual < 1) continue;
+		if (line[lineLengthActual - 1] == '\n')
+			line[lineLengthActual - 1] = 0;
 
 		itemAdd(line);
 	}

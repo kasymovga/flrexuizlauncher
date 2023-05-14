@@ -24,7 +24,11 @@ const FSChar *Rexuiz::binary() {
 #ifdef __APPLE__
 	return "Rexuiz.app/Contents/MacOS/rexuiz-dprm-sdl";
 #endif
+#if FS_CHAR_IS_8BIT
 	return "unknown";
+#else
+	return L"unknown";
+#endif
 }
 
 const char **Rexuiz::repos() {
@@ -40,9 +44,8 @@ const char **Rexuiz::repos() {
 }
 
 bool Rexuiz::presentsInDirectory(FSChar *path) {
-	FSChar *binarySubPath = FS::fromUTF8(binary());
+	const FSChar *binarySubPath = binary();
 	FSChar *fullBinaryPath = FS::pathConcat(path, binarySubPath);
-	delete[] binarySubPath;
 	FILE *file = FS::open(fullBinaryPath, "r");
 	if (file)
 		fclose(file);
