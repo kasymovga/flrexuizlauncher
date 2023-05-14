@@ -24,7 +24,7 @@ const FSChar *Rexuiz::binary() {
 #ifdef __APPLE__
 	return "Rexuiz.app/Contents/MacOS/rexuiz-dprm-sdl";
 #endif
-#if FS_CHAR_IS_8BIT
+#ifdef FS_CHAR_IS_8BIT
 	return "unknown";
 #else
 	return L"unknown";
