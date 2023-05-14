@@ -1,12 +1,12 @@
 CPP=c++
 CC=cc
 COMPILE=$(CPP) -Wall -g -std=c++03 -c -o
-LINK=$(CPP) -o
+LINK=$(CPP) -static-libstdc++ -o
 LINK_FLAGS_FLTK=`fltk-config --use-images --ldflags`
 COMPILE_FLAGS_FLTK=`fltk-config --use-images --cflags`
 LINK_FLAGS_CURL=`pkg-config --libs libcurl`
 COMPILE_FLAGS_CURL=`pkg-config --cflags libcurl`
-LINK_MBEDTLS_FLAGS=-lmbedtls -lmbedcrypto
+LINK_MBEDTLS_FLAGS=-lmbedcrypto
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Windows)
