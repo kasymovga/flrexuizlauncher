@@ -16,6 +16,7 @@ extern "C" {
 		char *buffer;
 		int downloaded;
 		int bufferSize;
+		Downloader *downloader;
 	};
 
 	static int download_progress(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
@@ -29,6 +30,9 @@ extern "C" {
 	static int download_write(void *data, size_t size, size_t nmemb, void *p) {
 		struct downloader_progress_info *i = (struct downloader_progress_info *)p;
 		int r = size * nmemb;
+		if (i->downloader->isAborted())
+			return -1;
+
 		if (i->file) {
 			r = fwrite(data, size, nmemb, i->file) * size;
 		}
@@ -47,13 +51,19 @@ extern "C" {
 	}
 }
 
+bool Downloader::isAborted() {
+	return this->aborted;
+}
+
 bool Downloader::download(const char *url, void progress(void *data, int bytes), void *progress_data, FILE *file, char **buffer, int *downloaded) {
 	downloader_progress_info i;
 	CURLcode res;
+	aborted = false;
 	i.progress = progress;
 	i.data = progress_data;
 	i.file = file;
 	i.downloaded = 0;
+	i.downloader = this;
 	if (buffer) {
 		i.buffer = new char[1024];
 		i.bufferSize = 1024;
@@ -87,6 +97,10 @@ bool Downloader::download(const char *url, void progress(void *data, int bytes),
 		*downloaded = i.downloaded;
 
 	return res == CURLE_OK && http_code == 200;
+}
+
+void Downloader::abort() {
+	aborted = true;
 }
 
 Downloader::Downloader() {

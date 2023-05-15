@@ -6,11 +6,13 @@
 #include "fs.h"
 #include "index.h"
 
+class GUI;
 class Launcher {
 public:
 	~Launcher();
 	Launcher(int, char **);
 	int run();
+	void abort();
 private:
 	Index currentIndex;
 	Index newIndex;
@@ -19,7 +21,7 @@ private:
 	const char *repo;
 	FSChar *installPath;
 	FSChar *indexPath;
-	GUI gui;
+	GUI *gui;
 	Downloader downloader;
 	Settings settings;
 	int argc;
@@ -29,5 +31,6 @@ private:
 	void validate();
 	void update();
 	void execute();
+	bool aborted;
 };
 #endif

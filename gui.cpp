@@ -25,7 +25,15 @@ public:
 	Fl_Native_File_Chooser *directoryChooser;
 };
 
-GUI::GUI() {
+static void gui_close_callback(Fl_Widget *widget, void *p) {
+	Launcher *launcher = (Launcher *)p;
+	if (fl_choice("Quit now?", "No", "Yes", 0) == 1) {
+		launcher->abort();
+		widget->hide();
+	}
+}
+
+GUI::GUI(Launcher *launcher) {
 	priv = new GUIPrivate;
 	priv->window = new Fl_Window(340, 140);
 	priv->icon = new Fl_PNG_Image("icon", rexuiz_icon, sizeof(rexuiz_icon));
@@ -46,6 +54,7 @@ GUI::GUI() {
 	priv->progressSecondary->maximum(100);
 	priv->progressSecondary->minimum(0);
 	priv->window->end();
+	priv->window->callback(gui_close_callback, launcher);
 	priv->directoryChooser = new Fl_Native_File_Chooser();
 	priv->directoryChooser->type(Fl_Native_File_Chooser::BROWSE_DIRECTORY);
 }

@@ -21,6 +21,8 @@ Launcher::Launcher(int argc, char **argv) {
 	installRequired = false;
 	repo = NULL;
 	indexPath = NULL;
+	aborted = false;
+	gui = new GUI(this);
 }
 
 Launcher::~Launcher() {
@@ -29,6 +31,13 @@ Launcher::~Launcher() {
 
 	if (indexPath)
 		delete[] indexPath;
+
+	delete gui;
+}
+
+void Launcher::abort() {
+	aborted = true;
+	downloader.abort();
 }
 
 void Launcher::validate() {
@@ -61,7 +70,7 @@ void Launcher::update() {
 	int totalSize = 0;;
 	repoSearch();
 	if (!repo) { //no working repo
-		gui.error("Update not available");
+		gui->error("Update not available");
 		return;
 	}
 #ifndef _WIN32
@@ -92,17 +101,17 @@ void Launcher::update() {
 		}
 #endif
 	}
-	gui.setProgress(0);
-	gui.setProgressSecondary(0);
+	gui->setProgress(0);
+	gui->setProgressSecondary(0);
 	Index updateIndex;
 	newIndex.compare(&currentIndex, &updateIndex);
 	if (!updateIndex.itemsCount) return;
 	printf("Files to update: %i\n", updateIndex.itemsCount);
-	gui.setInfo("Updating...");
-	gui.setInfoSecondary("Validating...");
+	gui->setInfo("Updating...");
+	gui->setInfoSecondary("Validating...");
 	for (int i = 0; i < updateIndex.itemsCount; ++i) {
 		FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
-		gui.setProgress(i * 100 / updateIndex.itemsCount);
+		gui->setProgress(i * 100 / updateIndex.itemsCount);
 		if (FS::size(path) == updateIndex.items[i].size && Sign::checkFileHash(path, updateIndex.items[i].hash, 32)) {
 			updateIndex.remove(i);
 			--i;
@@ -110,7 +119,7 @@ void Launcher::update() {
 		}
 		delete[] path;
 	}
-	gui.setProgress(100);
+	gui->setProgress(100);
 	if (!updateIndex.itemsCount) {
 		newIndex.saveToFile(indexPath);
 		goto finish;
@@ -120,47 +129,47 @@ void Launcher::update() {
 	}
 	char question[256];
 	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
-	if (gui.askYesNo(question)) {
+	if (gui->askYesNo(question)) {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
 			printf("Downloading %s\n", updateIndex.items[i].path);
-			gui.setProgress(i * 100 / updateIndex.itemsCount);
+			gui->setProgress(i * 100 / updateIndex.itemsCount);
 			FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
 			FSChar *pathTmp = FS::concat(path, ".tmp");
 			FS::directoryMakeFor(pathTmp);
 			FILE *f = FS::open(pathTmp, "wb");
 			if (!f) {
 				i = updateIndex.itemsCount;
-				gui.error("Open file faild");
+				gui->error("Open file faild");
 			} else {
 				char link[strlen(repo) + strlen(updateIndex.items[i].path) + 1];
 				sprintf(link, "%s/%s", repo, updateIndex.items[i].path);
-				gui.setProgress(i * 100 / updateIndex.itemsCount);
-				struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = &gui};
-				gui.setInfoSecondary("Downloading...");
+				gui->setProgress(i * 100 / updateIndex.itemsCount);
+				struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui};
+				gui->setInfoSecondary("Downloading...");
 				if (downloader.download(link, launcher_downloader_progress, &d, f, NULL, NULL)) {
 					fclose(f);
 					f = NULL;
-					gui.setInfoSecondary("Validating...");
+					gui->setInfoSecondary("Validating...");
 					if (FS::size(pathTmp) == updateIndex.items[i].size) {
 						if (Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
 							if (!FS::move(pathTmp, path)) {
 								i = updateIndex.itemsCount;
-								gui.error("File saving failed");
+								gui->error("File saving failed");
 							}
 						} else {
 							i = updateIndex.itemsCount;
 							FS::remove(pathTmp);
-							gui.error("Wrong checksum");
+							gui->error("Wrong checksum");
 						}
 					} else {
 						i = updateIndex.itemsCount;
 						//FS::remove(pathTmp);
-						gui.error("Wrong file size");
+						gui->error("Wrong file size");
 					}
 				} else {
 					printf("Downloading of %s failed\n", link);
 					i = updateIndex.itemsCount;
-					gui.error("Update failed");
+					gui->error("Update failed");
 					//fail
 				}
 			}
@@ -171,10 +180,10 @@ void Launcher::update() {
 	}
 	newIndex.saveToFile(indexPath);
 finish:
-	gui.setInfo("");
-	gui.setInfoSecondary("");
-	gui.setProgress(100);
-	gui.setProgressSecondary(100);
+	gui->setInfo("");
+	gui->setInfoSecondary("");
+	gui->setProgress(100);
+	gui->setProgressSecondary(100);
 	printf("update finished\n");
 }
 
@@ -188,16 +197,16 @@ void Launcher::repoSearch() {
 	const char **repos = Rexuiz::repos();
 	int n = 0;
 	for (p = repos; *p; p++) n++;
-	gui.setInfo("Check repository...");
+	gui->setInfo("Check repository...");
 	for (p = repos; *p && !repo; p++) {
-		gui.setProgress((p - repos) * 100 / n);
+		gui->setProgress((p - repos) * 100 / n);
 		printf("checking repo: %s\n", *p);
 		repoCheck = new char[strlen(*p) + 16];
 		sprintf(repoCheck, "%s/%s", *p, "index.lst");
-		gui.setInfoSecondary("Downloading...");
-		struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = &gui};
+		gui->setInfoSecondary("Downloading...");
+		struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = gui};
 		if (downloader.download(repoCheck, launcher_downloader_progress, &d, NULL, &buffer, &bufferLength)) {
-			gui.frame();
+			gui->frame();
 			sprintf(repoCheck, "%s/%s", *p, "index.lst.sig");
 			if (downloader.download(repoCheck, NULL, NULL, NULL, &bufferSig, &bufferSigLength)) {
 				if (Sign::verify(buffer, bufferLength, bufferSig, bufferSigLength)) {
@@ -214,7 +223,7 @@ void Launcher::repoSearch() {
 		}
 		delete[] repoCheck;
 	}
-	gui.setProgress(100);
+	gui->setProgress(100);
 	if (repo) {
 		printf("repo found: %s\n", repo);
 		newIndex.load(buffer);
@@ -259,7 +268,7 @@ void Launcher::execute() {
 	}
 #else
 	int pid;
-	gui.hide();
+	gui->hide();
 	if ((pid = fork())) {
 		int status;
 		waitpid(pid, &status, 0);
@@ -280,8 +289,8 @@ void Launcher::execute() {
 
 int Launcher::run() {
 	int r = 1;
-	gui.show();
-	gui.setInfo("Preparing");
+	gui->show();
+	gui->setInfo("Preparing");
 	FSChar *startLocation = FS::getBinaryLocation(argv[0]);
 	FS::stripToParent(startLocation);
 	settings.load();
@@ -295,7 +304,7 @@ int Launcher::run() {
 		}
 	}
 	if (!installPath || !installPath[0]) {
-		installPath = gui.selectDirectory("Please select install location", startLocation);
+		installPath = gui->selectDirectory("Please select install location", startLocation);
 	}
 	if (!installPath || !installPath[0])
 		goto finish;
@@ -318,7 +327,7 @@ int Launcher::run() {
 	settings.save();
 	r = 0;
 finish:
-	gui.hide();
+	gui->hide();
 	if (startLocation)
 		delete[] startLocation;
 

@@ -2,10 +2,12 @@
 #define _FLRL_GUI_H_
 
 #include "fs.h"
+#include "launcher.h"
 
+class Launcher;
 class GUI {
 public:
-	GUI();
+	GUI(Launcher *launcher);
 	~GUI();
 	bool show();
 	void hide();
