@@ -10,7 +10,7 @@ public:
 
 extern "C" {
 	struct downloader_progress_info {
-		void (*progress)(void *data, int bytes);
+		void (*progress)(void *data, int bytes, int total);
 		void *data;
 		FILE *file;
 		char *buffer;
@@ -22,7 +22,7 @@ extern "C" {
 	static int download_progress(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
 		struct downloader_progress_info *i = (struct downloader_progress_info *)p;
 		if (i->progress)
-			i->progress(i->data, dltotal);
+			i->progress(i->data, dlnow, dltotal);
 
 		return 0;
 	}
@@ -55,7 +55,7 @@ bool Downloader::isAborted() {
 	return this->aborted;
 }
 
-bool Downloader::download(const char *url, void progress(void *data, int bytes), void *progress_data, FILE *file, char **buffer, int *downloaded) {
+bool Downloader::download(const char *url, void progress(void *data, int bytes, int total), void *progress_data, FILE *file, char **buffer, int *downloaded) {
 	downloader_progress_info i;
 	CURLcode res;
 	aborted = false;

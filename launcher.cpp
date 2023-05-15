@@ -40,6 +40,11 @@ void Launcher::abort() {
 	downloader.abort();
 }
 
+void Launcher::error(const char *message) {
+	if (!aborted)
+		gui->error(message);
+}
+
 void Launcher::validate() {
 	bool validated = true;
 	for (int i = 0; i < currentIndex.itemsCount && validated; ++i) {
@@ -56,21 +61,29 @@ void Launcher::validate() {
 struct launcher_downloader_progress_data {
 	int expectedSize;
 	GUI *gui;
+	Downloader *downloader;
 };
 
-static void launcher_downloader_progress(void *data, int bytes) {
+static void launcher_downloader_progress(void *data, int bytes, int total) {
 	struct launcher_downloader_progress_data *d = (struct launcher_downloader_progress_data *)data;
+	if (d->expectedSize && total && total != d->expectedSize)
+		d->downloader->abort();
+
 	if (d->expectedSize) {
-		d->gui->setProgressSecondary(bytes * 100 / d->expectedSize);
-	} else
+		d->gui->setProgressSecondary((bytes * 100) / d->expectedSize);
+	} else if (total) {
+		d->gui->setProgressSecondary((bytes * 100) / total);
+	} else {
 		d->gui->frame();
+	}
 }
 
 void Launcher::update() {
 	int totalSize = 0;;
+	if (aborted) return;
 	repoSearch();
 	if (!repo) { //no working repo
-		gui->error("Update not available");
+		error("Update not available");
 		return;
 	}
 #ifndef _WIN32
@@ -139,12 +152,12 @@ void Launcher::update() {
 			FILE *f = FS::open(pathTmp, "wb");
 			if (!f) {
 				i = updateIndex.itemsCount;
-				gui->error("Open file faild");
+				error("Open file faild");
 			} else {
 				char link[strlen(repo) + strlen(updateIndex.items[i].path) + 1];
 				sprintf(link, "%s/%s", repo, updateIndex.items[i].path);
 				gui->setProgress(i * 100 / updateIndex.itemsCount);
-				struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui};
+				struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui, .downloader = &downloader};
 				gui->setInfoSecondary("Downloading...");
 				if (downloader.download(link, launcher_downloader_progress, &d, f, NULL, NULL)) {
 					fclose(f);
@@ -154,22 +167,22 @@ void Launcher::update() {
 						if (Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
 							if (!FS::move(pathTmp, path)) {
 								i = updateIndex.itemsCount;
-								gui->error("File saving failed");
+								error("File saving failed");
 							}
 						} else {
 							i = updateIndex.itemsCount;
 							FS::remove(pathTmp);
-							gui->error("Wrong checksum");
+							error("Wrong checksum");
 						}
 					} else {
 						i = updateIndex.itemsCount;
 						//FS::remove(pathTmp);
-						gui->error("Wrong file size");
+						error("Wrong file size");
 					}
 				} else {
 					printf("Downloading of %s failed\n", link);
 					i = updateIndex.itemsCount;
-					gui->error("Update failed");
+					error("Update failed");
 					//fail
 				}
 			}
@@ -199,16 +212,17 @@ void Launcher::repoSearch() {
 	for (p = repos; *p; p++) n++;
 	gui->setInfo("Check repository...");
 	for (p = repos; *p && !repo; p++) {
+		if (aborted) break;
 		gui->setProgress((p - repos) * 100 / n);
 		printf("checking repo: %s\n", *p);
 		repoCheck = new char[strlen(*p) + 16];
 		sprintf(repoCheck, "%s/%s", *p, "index.lst");
 		gui->setInfoSecondary("Downloading...");
-		struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = gui};
+		struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = gui, .downloader = &downloader};
 		if (downloader.download(repoCheck, launcher_downloader_progress, &d, NULL, &buffer, &bufferLength)) {
 			gui->frame();
 			sprintf(repoCheck, "%s/%s", *p, "index.lst.sig");
-			if (downloader.download(repoCheck, NULL, NULL, NULL, &bufferSig, &bufferSigLength)) {
+			if (downloader.download(repoCheck, launcher_downloader_progress, &d, NULL, &bufferSig, &bufferSigLength)) {
 				if (Sign::verify(buffer, bufferLength, bufferSig, bufferSigLength)) {
 					printf("sign verification successed\n");
 					repo = *p;
@@ -233,6 +247,7 @@ void Launcher::repoSearch() {
 }
 
 void Launcher::execute() {
+	if (aborted) return;
 	FSChar *executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
 	PROCESS_INFORMATION pi;

@@ -32,5 +32,6 @@ private:
 	void update();
 	void execute();
 	bool aborted;
+	void error(const char *message);
 };
 #endif

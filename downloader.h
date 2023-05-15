@@ -5,7 +5,7 @@
 
 class Downloader {
 public:
-	bool download(const char *url, void progress(void *data, int bytes), void *progress_data, FILE *file, char **buffer, int *downloaded);
+	bool download(const char *url, void progress(void *data, int bytes, int total), void *progress_data, FILE *file, char **buffer, int *downloaded);
 	Downloader();
 	~Downloader();
 	void abort();
