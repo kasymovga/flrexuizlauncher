@@ -176,14 +176,13 @@ void Launcher::update() {
 						}
 					} else {
 						i = updateIndex.itemsCount;
-						//FS::remove(pathTmp);
+						FS::remove(pathTmp);
 						error("Wrong file size");
 					}
 				} else {
 					printf("Downloading of %s failed\n", link);
 					i = updateIndex.itemsCount;
 					error("Update failed");
-					//fail
 				}
 			}
 			if (f) fclose(f);
