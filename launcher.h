@@ -18,6 +18,7 @@ private:
 	Index newIndex;
 	bool updater;
 	bool updateFailed;
+	bool updateHappened;
 	const char *repo;
 	FSChar *installPath;
 	FSChar *indexPath;

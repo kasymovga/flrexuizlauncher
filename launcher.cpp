@@ -23,6 +23,8 @@ Launcher::Launcher(int argc, char **argv) {
 	indexPath = NULL;
 	aborted = false;
 	gui = new GUI(this);
+	updateFailed = false;
+	updateHappened = false;
 }
 
 Launcher::~Launcher() {
@@ -83,7 +85,9 @@ void Launcher::update() {
 	if (aborted) return;
 	repoSearch();
 	if (!repo) { //no working repo
-		error("Update not available");
+		if (installRequired)
+			error("Cannot get installation data");
+
 		return;
 	}
 #ifndef _WIN32
@@ -114,6 +118,7 @@ void Launcher::update() {
 		}
 #endif
 	}
+	updateHappened = true;
 	gui->setProgress(0);
 	gui->setProgressSecondary(0);
 	Index updateIndex;
@@ -141,6 +146,7 @@ void Launcher::update() {
 		totalSize += updateIndex.items[i].size;
 	}
 	char question[256];
+	updateFailed = true;
 	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
 	if (gui->askYesNo(question)) {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
@@ -191,6 +197,7 @@ void Launcher::update() {
 		}
 	}
 	newIndex.saveToFile(indexPath);
+	updateFailed = false;
 finish:
 	gui->setInfo("");
 	gui->setInfoSecondary("");
@@ -247,6 +254,21 @@ void Launcher::repoSearch() {
 
 void Launcher::execute() {
 	if (aborted) return;
+	if (updateHappened) {
+		if (!updateFailed) {
+			if (installRequired) {
+				if (!gui->askYesNo("Install finished. Run game?")) return;
+			} else {
+				if (!gui->askYesNo("Update finished. Run game?")) return;
+			}
+		} else if (Rexuiz::presentsInDirectory(installPath)) {
+			if (installRequired) {
+				if (!gui->askYesNo("Install failed. Try run game anyway?")) return;
+			} else {
+				if (!gui->askYesNo("Update failed. Try run game anyway?")) return;
+			}
+		}
+	}
 	FSChar *executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
 	PROCESS_INFORMATION pi;
