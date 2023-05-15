@@ -10,6 +10,7 @@
 #include <FL/Fl_Progress.H>
 #include <FL/fl_ask.H>
 #include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Native_File_Chooser.H>
 
 class GUI::GUIPrivate {
 public:
@@ -21,6 +22,7 @@ public:
 	Fl_Progress *progressSecondary;
 	Fl_Image *logoImage;
 	Fl_RGB_Image *icon;
+	Fl_Native_File_Chooser *directoryChooser;
 };
 
 GUI::GUI() {
@@ -44,6 +46,8 @@ GUI::GUI() {
 	priv->progressSecondary->maximum(100);
 	priv->progressSecondary->minimum(0);
 	priv->window->end();
+	priv->directoryChooser = new Fl_Native_File_Chooser();
+	priv->directoryChooser->type(Fl_Native_File_Chooser::BROWSE_DIRECTORY);
 }
 
 bool GUI::show() {
@@ -87,9 +91,15 @@ void GUI::setInfoSecondary(const char *text) {
 }
 
 FSChar *GUI::selectDirectory(const char *question, const FSChar *start) {
-	char *directory = fl_dir_chooser(question, "", 0);
-	if (!directory) return NULL;
-	return FS::fromUTF8(directory);
+	const char *startDirectory = FS::toUTF8(start);
+	priv->directoryChooser->title(question);
+	priv->directoryChooser->directory(startDirectory);
+	switch (priv->directoryChooser->show()) {
+	case -1: error("Error with directory selection"); return NULL; //Error
+	case 1: return NULL; //Cancel
+	}
+	delete [] startDirectory;
+	return FS::fromUTF8(priv->directoryChooser->filename());
 }
 
 GUI::~GUI() {
@@ -101,6 +111,7 @@ GUI::~GUI() {
 	delete priv->progressSecondary;
 	delete priv->icon;
 	delete priv->window;
+	delete priv->directoryChooser;
 	delete priv;
 }
 
