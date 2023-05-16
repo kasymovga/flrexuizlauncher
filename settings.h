@@ -11,6 +11,7 @@ public:
 	bool save();
 	bool load();
 	void setInstallPath(const FSChar *path);
+	long long unsigned int lastUpdate;
 };
 
 #endif

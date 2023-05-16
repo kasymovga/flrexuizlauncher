@@ -35,6 +35,7 @@ bool Settings::save() {
 	if (installPath) {
 		path_utf8 = FS::toUTF8(this->installPath);
 		fprintf(f, "install_path=%s\n", path_utf8);
+		fprintf(f, "last_update=%lli\n", lastUpdate);
 	}
 	r = true;
 finish:
@@ -84,6 +85,7 @@ finish:
 
 Settings::Settings() {
 	installPath = NULL;
+	lastUpdate = 0;
 }
 
 Settings::~Settings() {

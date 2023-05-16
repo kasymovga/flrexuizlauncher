@@ -19,6 +19,7 @@ private:
 	bool updater;
 	bool updateFailed;
 	bool updateHappened;
+	bool updateEmpty;
 	const char *repo;
 	FSChar *installPath;
 	FSChar *indexPath;

@@ -9,9 +9,11 @@
 #ifdef _WIN32
 #include <processthreadsapi.h>
 #include <windows.h>
+#include <sysinfoapi.h>
 #else
 #include <unistd.h>
 #include <sys/wait.h>
+#include <time.h>
 #endif
 
 Launcher::Launcher(int argc, char **argv) {
@@ -25,6 +27,7 @@ Launcher::Launcher(int argc, char **argv) {
 	gui = new GUI(this);
 	updateFailed = false;
 	updateHappened = false;
+	updateEmpty = false;
 }
 
 Launcher::~Launcher() {
@@ -72,9 +75,9 @@ static void launcher_downloader_progress(void *data, int bytes, int total) {
 		d->downloader->abort();
 
 	if (d->expectedSize) {
-		d->gui->setProgressSecondary((bytes * 100) / d->expectedSize);
+		d->gui->setProgressSecondary(((long long int)bytes * 100) / d->expectedSize);
 	} else if (total) {
-		d->gui->setProgressSecondary((bytes * 100) / total);
+		d->gui->setProgressSecondary(((long long int)bytes * 100) / total);
 	} else {
 		d->gui->frame();
 	}
@@ -123,7 +126,11 @@ void Launcher::update() {
 	gui->setProgressSecondary(0);
 	Index updateIndex;
 	newIndex.compare(&currentIndex, &updateIndex);
-	if (!updateIndex.itemsCount) return;
+	if (!updateIndex.itemsCount) {
+		updateEmpty = true;
+		newIndex.saveToFile(indexPath);
+		return;
+	}
 	printf("Files to update: %i\n", updateIndex.itemsCount);
 	gui->setInfo("Updating...");
 	gui->setInfoSecondary("Validating...");
@@ -138,10 +145,6 @@ void Launcher::update() {
 		delete[] path;
 	}
 	gui->setProgress(100);
-	if (!updateIndex.itemsCount) {
-		newIndex.saveToFile(indexPath);
-		goto finish;
-	}
 	for (int i = 0; i < updateIndex.itemsCount; ++i) {
 		totalSize += updateIndex.items[i].size;
 	}
@@ -198,7 +201,6 @@ void Launcher::update() {
 	}
 	newIndex.saveToFile(indexPath);
 	updateFailed = false;
-finish:
 	gui->setInfo("");
 	gui->setInfoSecondary("");
 	gui->setProgress(100);
@@ -254,7 +256,7 @@ void Launcher::repoSearch() {
 
 void Launcher::execute() {
 	if (aborted) return;
-	if (updateHappened) {
+	if (updateHappened && !updateEmpty) {
 		if (!updateFailed) {
 			if (installRequired) {
 				if (!gui->askYesNo("Install finished. Run game?")) return;
@@ -325,6 +327,7 @@ void Launcher::execute() {
 
 int Launcher::run() {
 	int r = 1;
+	long long int epoch, epochExit;
 	gui->show();
 	gui->setInfo("Preparing");
 	FSChar *startLocation = FS::getBinaryLocation(argv[0]);
@@ -355,11 +358,35 @@ int Launcher::run() {
 	} else
 		validate();
 
-	if (installRequired || !currentIndex.itemsCount)
+	#ifdef _WIN32
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	epoch = (((LONGLONG)ft.dwLowDateTime + ((LONGLONG)(ft.dwHighDateTime) << 32LL)) / 10000000);
+	#else
+	epoch = time(NULL);
+	#endif
+	if (installRequired || !currentIndex.itemsCount || epoch - settings.lastUpdate > 21600)
 		update();
 
 	execute();
+	#ifdef _WIN32
+	GetSystemTimeAsFileTime(&ft);
+	epochExit = (((LONGLONG)ft.dwLowDateTime + ((LONGLONG)(ft.dwHighDateTime) << 32LL)) / 10000000);
+	#else
+	epochExit = time(NULL);
+	#endif
 	printf("Saving settings\n");
+	if (epochExit - epoch > 30) {
+		if (updateHappened) {
+			if (updateFailed)
+				settings.lastUpdate = 0;
+			else
+				settings.lastUpdate = epoch;
+		}
+	} else { //probably something wrong happened, force update next time
+		printf("Exited after %lli seconds, next update forced\n", (long long int)(epochExit - epoch));
+		settings.lastUpdate = 0;
+	}
 	settings.save();
 	r = 0;
 finish:
