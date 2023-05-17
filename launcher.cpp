@@ -84,6 +84,16 @@ static void launcher_downloader_progress(void *data, int bytes, int total) {
 	}
 }
 
+struct launcher_uncompress_progress_data {
+	GUI *gui;
+};
+
+static void launcher_uncompress_progress(void *data, int bytes, int total) {
+	struct launcher_uncompress_progress_data *d = (struct launcher_uncompress_progress_data *)data;
+	if (total)
+		d->gui->setProgressSecondary(((long long int)bytes * 100) / total);
+}
+
 void Launcher::update() {
 	int totalSize = 0;;
 	if (aborted) return;
@@ -134,6 +144,8 @@ void Launcher::update() {
 	}
 	printf("Files to update: %i\n", updateIndex.itemsCount);
 	gui->setInfo("Updating...");
+	gui->setProgress(0);
+	gui->setProgressSecondary(0);
 	gui->setInfoSecondary("Validating...");
 	for (int i = 0; i < updateIndex.itemsCount; ++i) {
 		FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
@@ -177,7 +189,9 @@ void Launcher::update() {
 					if (downloader.download(linkgz, launcher_downloader_progress, &d, f, NULL, NULL)) {
 						fclose(f);
 						f = NULL;
-						if (UnZip::uncompressFile(pathTmpGz, pathTmp) && FS::size(pathTmp) == updateIndex.items[i].size && Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
+						struct launcher_uncompress_progress_data ud = {.gui = gui};
+						gui->setInfoSecondary("Extracting...");
+						if (UnZip::uncompressFile(pathTmpGz, pathTmp, launcher_uncompress_progress, &ud) && FS::size(pathTmp) == updateIndex.items[i].size && Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
 							FS::move(pathTmp, path);
 							success = true;
 						} else {

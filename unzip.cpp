@@ -10,7 +10,7 @@ extern "C" {
 	}
 }
 
-bool UnZip::uncompressFile(const FSChar *path, const FSChar *extractPath) {
+bool UnZip::uncompressFile(const FSChar *path, const FSChar *extractPath, void progress(void *data, int bytes, int total), void *progress_data) {
 	mz_stream_s stream;
 	FILE *f;
 	FILE *fOut;
@@ -19,7 +19,10 @@ bool UnZip::uncompressFile(const FSChar *path, const FSChar *extractPath) {
 	bool r = false;
 	int readed;
 	int mzresult;
+	int totalSize;
+	int totalReaded = 0;
 	memset(&stream, 0, sizeof(stream));
+	totalSize = FS::size(path) - 10;
 	if (mz_inflateInit2(&stream, -MZ_DEFAULT_WINDOW_BITS) != MZ_OK) goto finish;
 	mz_inflateInitialized = true;
 	if (!(f = FS::open(path, "rb"))) goto finish;
@@ -45,11 +48,15 @@ bool UnZip::uncompressFile(const FSChar *path, const FSChar *extractPath) {
 					goto finish;
 				}
 			} else {
+				totalReaded += readed;
 				stream.avail_in += readed;
 				mzresult = mz_inflate(&stream, MZ_NO_FLUSH);
 			}
 		} else
 			mzresult = mz_inflate(&stream, MZ_NO_FLUSH);
+
+		if (progress)
+			progress(progress_data, totalReaded, totalSize);
 
 		if (stream.avail_out < sizeof(bufferOut)) {
 			if (fwrite(bufferOut, 1, sizeof(bufferOut) - stream.avail_out, fOut) < 0) {
