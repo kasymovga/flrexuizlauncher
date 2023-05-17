@@ -163,7 +163,7 @@ void Launcher::update() {
 				i = updateIndex.itemsCount;
 				error("Open file faild");
 			} else {
-				char link[strlen(repo) + strlen(updateIndex.items[i].path) + 1];
+				char link[strlen(repo) + strlen(updateIndex.items[i].path) + 16];
 				sprintf(link, "%s/%s", repo, updateIndex.items[i].path);
 				gui->setProgress(i * 100 / updateIndex.itemsCount);
 				struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui, .downloader = &downloader};
