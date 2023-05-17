@@ -10,11 +10,80 @@ extern "C" {
 	}
 }
 
+bool UnZip::uncompressFile(const FSChar *path, const FSChar *extractPath) {
+	mz_stream_s stream;
+	FILE *f;
+	FILE *fOut;
+	unsigned char bufferIn[1024], bufferOut[1024];
+	bool mz_inflateInitialized = false;
+	bool r = false;
+	int readed;
+	int mzresult;
+	memset(&stream, 0, sizeof(stream));
+	if (mz_inflateInit2(&stream, -MZ_DEFAULT_WINDOW_BITS) != MZ_OK) goto finish;
+	mz_inflateInitialized = true;
+	if (!(f = FS::open(path, "rb"))) goto finish;
+	if (fseek(f, 10, SEEK_SET)) goto finish;
+	if (!(fOut = FS::open(extractPath, "wb"))) goto finish;
+	stream.next_in = bufferIn;
+	stream.avail_in = 0;
+	for (;;) {
+		//printf("decompress cycle\n");
+		stream.next_out = bufferOut;
+		stream.avail_out = sizeof(bufferOut);
+		if (stream.avail_in && bufferIn != stream.next_in) {
+			memmove(bufferIn, stream.next_in, stream.avail_in);
+		}
+		stream.next_in = bufferIn;
+		if (stream.avail_in < sizeof(bufferIn)) {
+			readed = fread(bufferIn + stream.avail_in, 1, sizeof(bufferIn) - stream.avail_in, f);
+			if (readed <= 0) {
+				if (feof(f))
+					mzresult = mz_inflate(&stream, MZ_NO_FLUSH);
+				else {
+					printf("uncompress: read failed\n");
+					goto finish;
+				}
+			} else {
+				stream.avail_in += readed;
+				mzresult = mz_inflate(&stream, MZ_NO_FLUSH);
+			}
+		} else
+			mzresult = mz_inflate(&stream, MZ_NO_FLUSH);
+
+		if (stream.avail_out < sizeof(bufferOut)) {
+			if (fwrite(bufferOut, 1, sizeof(bufferOut) - stream.avail_out, fOut) < 0) {
+				printf("uncompress: write failed\n");
+				goto finish;
+			}
+		}
+		if (mzresult == MZ_STREAM_END) {
+			printf("mz_inflate: stream finished\n");
+			break;
+		}
+		if (mzresult != MZ_OK) {
+			if (mzresult == MZ_DATA_ERROR)
+				printf("mz_inflate: wrong data\n");
+			else if (mzresult == MZ_BUF_ERROR)
+				printf("mz_inflate: buffer error\n");
+
+			goto finish;
+		}
+	};
+	r = true;
+finish:
+	if (mz_inflateInitialized) mz_inflateEnd(&stream);
+	if (f) fclose(f);
+	if (fOut) fclose(fOut);
+	if (!r) FS::remove(extractPath);
+	return r;
+}
+
 bool UnZip::extractFile(const FSChar *path, const char *zipPath, const FSChar *extractPath) {
 	bool r = false;
 	bool zip_archive_opened = false;
-	FILE *file = FS::open(path, "r");
-	FILE *extractFile = FS::open(extractPath, "r");
+	FILE *file = FS::open(path, "rb");
+	FILE *extractFile = FS::open(extractPath, "rb");
 	int size;
 	if (!file || !extractFile) goto finish;
 	mz_zip_archive zip_archive;

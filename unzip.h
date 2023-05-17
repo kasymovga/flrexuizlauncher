@@ -6,6 +6,7 @@
 class UnZip {
 public:
 	static bool extractFile(const FSChar *path, const char *zipPath, const FSChar *extractPath);
+	static bool uncompressFile(const FSChar *path, const FSChar *extractPath);
 };
 
 #endif // UNZIP_H

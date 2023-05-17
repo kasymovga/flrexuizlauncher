@@ -1,6 +1,7 @@
 #include "launcher.h"
 #include "rexuiz.h"
 #include "sign.h"
+#include "unzip.h"
 
 #include <sys/stat.h>
 #include <stdio.h>
@@ -93,13 +94,13 @@ void Launcher::update() {
 
 		return;
 	}
-#ifndef _WIN32
 	const char *ext;
-#endif
+	FILE *f = NULL;
+	FSChar *path = NULL, *pathTmp = NULL;
 	for (int i = 0; i < newIndex.itemsCount; ++i) {
 #ifndef _WIN32
 		if ((ext = strrchr(newIndex.items[i].path, '.'))) {
-			if (!strcmp(ext, ".exe") || !strcmp(ext, ".dll")) {
+			if (!strcmp(ext, ".exe") || !strcmp(ext, ".dll") || !strcmp(ext, ".cmd")) {
 				newIndex.remove(i);
 				--i;
 				continue;
@@ -143,6 +144,7 @@ void Launcher::update() {
 			continue;
 		}
 		delete[] path;
+		path = NULL;
 	}
 	gui->setProgress(100);
 	for (int i = 0; i < updateIndex.itemsCount; ++i) {
@@ -155,52 +157,86 @@ void Launcher::update() {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
 			printf("Downloading %s\n", updateIndex.items[i].path);
 			gui->setProgress(i * 100 / updateIndex.itemsCount);
-			FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
-			FSChar *pathTmp = FS::concat(path, ".tmp");
+			if (path) delete[] path;
+			if (pathTmp) delete[] pathTmp;
+			path = FS::pathConcat(installPath, updateIndex.items[i].path);
+			pathTmp = FS::concat(path, ".tmp");
 			FS::directoryMakeFor(pathTmp);
-			FILE *f = FS::open(pathTmp, "wb");
-			if (!f) {
-				i = updateIndex.itemsCount;
-				error("Open file faild");
-			} else {
-				char link[strlen(repo) + strlen(updateIndex.items[i].path) + 16];
-				sprintf(link, "%s/%s", repo, updateIndex.items[i].path);
-				gui->setProgress(i * 100 / updateIndex.itemsCount);
-				struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui, .downloader = &downloader};
-				gui->setInfoSecondary("Downloading...");
-				if (downloader.download(link, launcher_downloader_progress, &d, f, NULL, NULL)) {
-					fclose(f);
-					f = NULL;
-					gui->setInfoSecondary("Validating...");
-					if (FS::size(pathTmp) == updateIndex.items[i].size) {
-						if (Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
-							if (!FS::move(pathTmp, path)) {
-								i = updateIndex.itemsCount;
-								error("File saving failed");
-							}
+			char link[strlen(repo) + strlen(updateIndex.items[i].path) + 16];
+			sprintf(link, "%s/%s", repo, updateIndex.items[i].path);
+			gui->setProgress(i * 100 / updateIndex.itemsCount);
+			if ((ext = strrchr(link, '.'))) ext++;
+			if (ext && strcmp(ext, "pk3")) {
+				bool success = false;
+				char linkgz[strlen(link)];
+				sprintf(linkgz, "%s.gz", link);
+				FSChar *pathTmpGz = FS::concat(pathTmp, ".gz");
+				if ((f = FS::open(pathTmpGz, "wb"))) {
+					struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = gui, .downloader = &downloader};
+					gui->setInfoSecondary("Downloading...");
+					if (downloader.download(linkgz, launcher_downloader_progress, &d, f, NULL, NULL)) {
+						fclose(f);
+						f = NULL;
+						if (UnZip::uncompressFile(pathTmpGz, pathTmp) && FS::size(pathTmp) == updateIndex.items[i].size && Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
+							FS::move(pathTmp, path);
+							success = true;
 						} else {
-							i = updateIndex.itemsCount;
-							FS::remove(pathTmp);
-							error("Wrong checksum");
+							printf("Uncompressing failed\n");
+						}
+					}
+					if (f) fclose(f);
+					f = NULL;
+					FS::remove(pathTmpGz);
+				}
+				delete[] pathTmpGz;
+				if (success) continue;
+			}
+			struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui, .downloader = &downloader};
+			gui->setInfoSecondary("Downloading...");
+			if (f) fclose(f);
+			if (!(f = FS::open(pathTmp, "wb"))) {
+				char message[1024];
+				snprintf(message, sizeof(message), "Cannot open file: "
+						#ifdef FS_CHAR_IS_16BIT
+						"%ls"
+						#else
+						"%s"
+						#endif
+						, pathTmp);
+				error(message);
+				goto finish;
+			}
+			if (downloader.download(link, launcher_downloader_progress, &d, f, NULL, NULL)) {
+				fclose(f);
+				f = NULL;
+				gui->setInfoSecondary("Validating...");
+				if (FS::size(pathTmp) == updateIndex.items[i].size) {
+					if (Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
+						if (!FS::move(pathTmp, path)) {
+							error("File saving failed");
+							goto finish;
 						}
 					} else {
-						i = updateIndex.itemsCount;
-						FS::remove(pathTmp);
-						error("Wrong file size");
+						error("Wrong checksum");
+						goto finish;
 					}
 				} else {
-					printf("Downloading of %s failed\n", link);
-					i = updateIndex.itemsCount;
-					error("Update failed");
+					error("Wrong file size");
+					goto finish;
 				}
+			} else {
+				printf("Downloading of %s failed\n", link);
+				error("Update failed");
+				goto finish;
 			}
-			if (f) fclose(f);
-			delete[] path;
-			delete[] pathTmp;
 		}
 	}
-	newIndex.saveToFile(indexPath);
 	updateFailed = false;
+finish:
+	if (f) fclose(f);
+	if (path) delete[] path;
+	if (pathTmp) delete[] pathTmp;
+	newIndex.saveToFile(indexPath);
 	gui->setInfo("");
 	gui->setInfoSecondary("");
 	gui->setProgress(100);
