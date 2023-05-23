@@ -304,7 +304,34 @@ void Launcher::repoSearch() {
 		printf("repo not found\n");
 }
 
+void launcher_execute_pipe_callback(int fd, void *data) {
+	GUI *gui = (GUI *)data;
+#ifdef _WIN32
+	char buffer[1024];
+	int n;
+	if ((n = _read(fd, buffer, sizeof(buffer)) - 1) >= 0) {
+		fwrite(buffer, n, 1, stdout);
+	} else
+		gui->hide();
+#else
+	char buffer[1024];
+	int n;
+	if ((n = read(fd, buffer, sizeof(buffer)) - 1) >= 0) {
+		fwrite(buffer, n, 1, stdout);
+	} else
+		gui->hide();
+#endif
+}
+
 void Launcher::execute() {
+	int pipe_fileno = -1;
+	FSChar *executablePath = NULL;
+#ifdef _WIN32
+	FILE *pf = NULL;
+#else
+	int pipes[2];
+	pipes[0] = -1;
+#endif
 	if (aborted) return;
 	if (updateHappened && !updateEmpty) {
 		if (!updateFailed) {
@@ -321,47 +348,55 @@ void Launcher::execute() {
 			}
 		}
 	}
-	FSChar *executablePath = FS::pathConcat(installPath, Rexuiz::binary());
+	executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
-	PROCESS_INFORMATION pi;
-	STARTUPINFOW si;
-	memset(&si, 0, sizeof(si));
-	si.cb = sizeof(si);
-	memset(&pi, 0, sizeof(pi));
-	FSChar *args = FS::fromUTF8("rexuiz.exe");
-	FSChar *argsNew;
-	for (int i = 1; i < argc; ++i) {
-		argsNew = FS::concat(args, " ");
-		delete[] args;
-		args = argsNew;
-		argsNew = FS::concat(args, argv[i]);
-		delete[] args;
-		args = argsNew;
+	int popenStringLength = 0;
+	for (FSChar *c = executablePath; *c; c++) {
+		popenStringLength++;
+		if (*c == L' ') popenStringLength += 2;
+		else if (*c == L'"') popenStringLength += 1;
 	}
-	BOOL bSuccess = CreateProcessW(executablePath,
-			args,     // command line
-			NULL,          // process security attributes
-			NULL,          // primary thread security attributes
-			TRUE,          // handles are inherited
-			0,             // creation flags
-			NULL,          // use parent's environment
-			NULL,          // use parent's current directory
-			&si,  // STARTUPINFO pointer
-			&pi);  // receives PROCESS_INFORMATION
-	// If an error occurs, exit the application.
-	if (bSuccess) {
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
+	FSChar popenString[popenStringLength + 1];
+	FSChar *c2 = popenString;
+	for (FSChar *c = executablePath; *c; ++c, ++c2) {
+		if (*c == L' ') {
+			*c2 = L'"';
+			c2++;
+			*c2 = L' ';
+			c2++;
+			*c2 = L'"';
+		} else if (*c == L'"') {
+			*c2 = L'"';
+			c2++;
+			*c2 = L'"';
+		} else
+			*c2 = *c;
 	}
+	*c2 = 0;
+	pf = _wpopen(popenString, L"rb");
+	if (!pf) {
+		gui->error("popen() failed");
+		goto finish;
+	}
+	pipe_fileno = fileno(pf);
 #else
-	int pid;
-	gui->hide();
+	int pid, status;
+	if (pipe(pipes)) {
+		gui->error("pipe() failed");
+		goto finish;;
+	}
+	pipe_fileno = pipes[0];
 	if ((pid = fork())) {
-		int status;
-		waitpid(pid, &status, 0);
+		if (pid < 0) {
+			gui->error("fork() failed");
+			goto finish;
+		}
+		close(pipes[1]);
 	} else {
 		char *argv2[argc + 1];
+		close(pipes[0]);
+		close(1);
+		dup2(pipes[1], 1);
 		memcpy(&argv2[1], &argv[1], sizeof(char *) * (argc - 1));
 		argv2[argc] = NULL;
 		argv2[0] = executablePath;
@@ -372,7 +407,21 @@ void Launcher::execute() {
 		exit(1);
 	}
 #endif
-	delete[] executablePath;
+	gui->watchfd(pipe_fileno, launcher_execute_pipe_callback, gui);
+	while (gui->wait());
+finish:
+	if (pipe_fileno > 0)
+		gui->unwatchfd(pipe_fileno);
+
+#ifdef _WIN32
+	if (pf) fclose(pf);
+#else
+	waitpid(pid, &status, 0);
+	if (pipes[0] >= 0)
+		close(pipes[0]);
+#endif
+	if (executablePath)
+		delete[] executablePath;
 }
 
 int Launcher::run() {

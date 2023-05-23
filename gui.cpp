@@ -133,3 +133,11 @@ void GUI::setProgressSecondary(int p) {
 	priv->progressSecondary->value(p);
 	frame();
 }
+
+void GUI::watchfd(int fd, void callback(int fd, void *callback_data), void *callback_data) {
+	Fl::add_fd(fd, FL_READ | FL_EXCEPT, callback, callback_data);
+}
+
+void GUI::unwatchfd(int fd) {
+	Fl::remove_fd(fd);
+}

@@ -20,6 +20,8 @@ public:
 	FSChar *selectDirectory(const char *question, const FSChar *start);
 	bool askYesNo(const char *choice);
 	void error(const char *error);
+	void watchfd(int fd, void callback(int fd, void *callback_data), void *callback_data);
+	void unwatchfd(int fd);
 private:
 	class GUIPrivate;
 	GUIPrivate *priv;
