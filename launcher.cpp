@@ -356,6 +356,10 @@ void Launcher::execute() {
 		if (*c == L' ') popenStringLength += 2;
 		else if (*c == L'"') popenStringLength += 1;
 	}
+	const FSChar *args = GetCommandLineW();
+	if (*args)
+		popenStringLength += wcslen(args + 1);
+
 	FSChar popenString[popenStringLength + 1];
 	FSChar *c2 = popenString;
 	for (FSChar *c = executablePath; *c; ++c, ++c2) {
@@ -372,7 +376,13 @@ void Launcher::execute() {
 		} else
 			*c2 = *c;
 	}
-	*c2 = 0;
+	if (*args) {
+		*c2 = L' ';
+		c2++;
+		wcscpy(c2, args);
+	} else
+		*c2 = 0;
+
 	pf = _wpopen(popenString, L"rb");
 	if (!pf) {
 		gui->error("popen() failed");
