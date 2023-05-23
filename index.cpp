@@ -186,7 +186,7 @@ void Index::compare(Index *in, Index *out) {
 	while (i < itemsCount && j < in->itemsCount) {
 		diff = strcmp(items[i].path, in->items[j].path);
 		if (!diff) {
-			if (items[i].size != in->items[j].size || !memcmp(items[i].hash, in->items[j].hash, 32)) {
+			if (items[i].size != in->items[j].size || memcmp(items[i].hash, in->items[j].hash, 32)) {
 				out->itemAdd(&items[i]);
 			}
 			++i;
