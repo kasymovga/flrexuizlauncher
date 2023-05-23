@@ -132,7 +132,6 @@ void Launcher::update() {
 		}
 #endif
 	}
-	updateHappened = true;
 	gui->setProgress(0);
 	gui->setProgressSecondary(0);
 	Index updateIndex;
@@ -142,6 +141,7 @@ void Launcher::update() {
 		newIndex.saveToFile(indexPath);
 		return;
 	}
+	updateHappened = true;
 	printf("Files to update: %i\n", updateIndex.itemsCount);
 	gui->setInfo("Updating...");
 	gui->setProgress(0);
@@ -165,7 +165,7 @@ void Launcher::update() {
 	char question[256];
 	updateFailed = true;
 	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
-	if (gui->askYesNo(question)) {
+	if (updateIndex.itemsCount && gui->askYesNo(question)) {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
 			printf("Downloading %s\n", updateIndex.items[i].path);
 			gui->setProgress(i * 100 / updateIndex.itemsCount);
@@ -325,6 +325,8 @@ void launcher_execute_pipe_callback(int fd, void *data) {
 
 void Launcher::execute() {
 	int pipe_fileno = -1;
+	gui->setInfo("Running");
+	gui->setInfoSecondary("");
 	FSChar *executablePath = NULL;
 #ifdef _WIN32
 	FILE *pf = NULL;
