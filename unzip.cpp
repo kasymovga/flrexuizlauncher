@@ -12,8 +12,8 @@ extern "C" {
 
 bool UnZip::uncompressFile(const FSChar *path, const FSChar *extractPath, void progress(void *data, int bytes, int total), void *progress_data) {
 	mz_stream_s stream;
-	FILE *f;
-	FILE *fOut;
+	FILE *f = NULL;
+	FILE *fOut = NULL;
 	unsigned char bufferIn[1024], bufferOut[1024];
 	bool mz_inflateInitialized = false;
 	bool r = false;
