@@ -2,6 +2,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <winreg.h>
+#endif
 
 static const FSChar* settings_location() {
 #ifdef FS_CHAR_IS_8BIT
@@ -17,12 +21,64 @@ static const FSChar* settings_location() {
 	FSChar *path = FS::pathConcat(home, "RexuizLauncher" FS_DELIMETER_STRING "flrl.cfg");;
 #else
 #ifdef __APPLE__
-	FSChar *path = FS::pathConcat(home, "Library" FS_DELIMETER_STRING "Preferences" FS_DELIMETER_STRING "flrl.cfg");;
+	FSChar *path = FS::pathConcat(home, "Library" FS_DELIMETER_STRING "Application Support" FS_DELIMETER_STRING "flrl.cfg");;
 #else
 	FSChar *path = FS::pathConcat(home, ".config" FS_DELIMETER_STRING "flrl.cfg");;
 #endif
 #endif
 	return path;
+}
+
+void Settings::import() {
+#ifdef _WIN32
+	DWORD bufferSize = 1024;
+	wchar_t buffer[bufferSize];
+	if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\RexuizDev\\RexuizLauncher\\main\\install_path", NULL, RRF_RT_REG_SZ, NULL, buffer, &bufferSize) == ERROR_SUCCESS) {
+		if (buffer[0])
+			installPath = FS::duplicate(buffer);
+	}
+#else
+#ifdef __APPLE__
+	FILE *f = popen("plutil -extract main\\\\.install_path xml1 ~/Library/Preferences/com.rexuizdev.RexuizLauncher.plist -o - | xmllint --xpath '//plist//string//text()'", "rb");
+	if (f) {
+		char buffer[2048];
+		int n;
+		if ((n = fread(buffer, sizeof(buffer) - 1, 1, f)) > 0) {
+			buffer[n] = 0;
+			installPath = FS::duplicate(buffer);
+		}
+		fclose(f);
+	}
+#else
+	FILE *f = NULL;
+	const FSChar *home = getenv("HOME");
+	char *line = NULL;
+	size_t lineLength = 0;
+	ssize_t lineLengthActual;
+	FSChar *path = FS::pathConcat(home, ".config" FS_DELIMETER_STRING "RexuizDev" FS_DELIMETER_STRING "RexuizLauncher.conf");;
+	if (!(f = FS::open(path, "r"))) goto finish;
+	while ((lineLengthActual = getline(&line, &lineLength, f)) >= 0) {
+		if (!line[0]) continue;
+		if (line[lineLengthActual - 1] == '\n')
+			line[lineLengthActual - 1] = 0;
+
+		if (!line[0]) continue;
+		if (lineLengthActual >= 2 && line[lineLengthActual - 2] == '\r')
+			line[lineLengthActual - 2] = 0;
+
+		if (!line[0]) continue;
+		if (!strncmp(line, "install_path=", 13)) {
+			if (installPath) delete[] installPath;
+			installPath = FS::fromUTF8(&line[13]);
+			break;
+		}
+	}
+finish:
+	if (path) delete[] path;
+	if (line) free(line);
+	if (f) fclose(f);
+#endif
+#endif
 }
 
 bool Settings::save() {
@@ -42,6 +98,7 @@ finish:
 	if (f) fclose(f);
 	if (path) delete[] path;
 	if (path_utf8) delete[] path_utf8;
+	if (!f) import();
 	return r;
 }
 

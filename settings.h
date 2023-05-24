@@ -4,6 +4,7 @@
 #include "fs.h"
 
 class Settings {
+	void import();
 public:
 	Settings();
 	~Settings();
