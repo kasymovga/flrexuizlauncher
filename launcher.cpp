@@ -306,21 +306,17 @@ void Launcher::repoSearch() {
 
 void launcher_execute_pipe_callback(int fd, void *data) {
 	GUI *gui = (GUI *)data;
+	char buffer[1024];
+	int n;
 #ifdef _WIN32
-	char buffer[1024];
-	int n;
-	if ((n = _read(fd, buffer, sizeof(buffer)) - 1) >= 0) {
-		fwrite(buffer, n, 1, stdout);
-	} else
-		gui->hide();
+	if ((n = _read(fd, buffer, sizeof(buffer))) > 0) {
 #else
-	char buffer[1024];
-	int n;
-	if ((n = read(fd, buffer, sizeof(buffer)) - 1) >= 0) {
-		fwrite(buffer, n, 1, stdout);
-	} else
-		gui->hide();
+	if ((n = read(fd, buffer, sizeof(buffer))) > 0) {
 #endif
+		fwrite(buffer, 1, n, stdout);
+	} else {
+		gui->hide();
+	}
 }
 
 void Launcher::execute() {
@@ -333,6 +329,7 @@ void Launcher::execute() {
 #else
 	int pipes[2];
 	pipes[0] = -1;
+	pipes[1] = -1;
 #endif
 	if (aborted) return;
 	if (updateHappened && !updateEmpty) {
@@ -404,6 +401,7 @@ void Launcher::execute() {
 			goto finish;
 		}
 		close(pipes[1]);
+		pipes[1] = -1;
 	} else {
 		char *argv2[argc + 1];
 		close(pipes[0]);
@@ -429,11 +427,13 @@ finish:
 	if (pf)
 		fclose(pf);
 #else
-
 	if (pid > 0)
 		waitpid(pid, &status, 0);
 
 	if (pipes[0] >= 0)
+		close(pipes[0]);
+
+	if (pipes[-1] >= 0)
 		close(pipes[0]);
 #endif
 	if (executablePath)
