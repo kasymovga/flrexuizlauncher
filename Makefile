@@ -1,3 +1,4 @@
+WINDRES=windres
 CXX=c++
 CC=cc
 COMPILE=$(CXX) $(CXXFLAGS) -Wall -g -std=c++03 -c -o
@@ -11,14 +12,27 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Windows)
 TARGET ?= windows
 else
+ifeq ($(UNAME), Darwin)
+TARGET ?= mac
+else
+TARGET ?= linux
+endif
 endif
 
-ifeq ($(TARGET), windows)
+ifeq ($(TARGET),windows)
 FLREXUIZLAUNCHER=flrexuizlauncher.exe
 LINK_OS_FLAGS=-lshlwapi
+ICON=icon.res
+else
+ifeq ($(TARGET),mac)
+FLREXUIZLAUNCHER=RexuizLauncher.app/Contents/MacOS/flrexuizlauncher
+LINK_OS_FLAGS=
+ICON=
 else
 FLREXUIZLAUNCHER=flrexuizlauncher
 LINK_OS_FLAGS=
+ICON=
+endif
 endif
 
 .PHONY: all clean
@@ -27,6 +41,9 @@ all: $(FLREXUIZLAUNCHER)
 
 clean:
 	rm -f *.o rexuiz_icon.h rexuiz_logo.h rexuiz_pub_key.h $(FLREXUIZLAUNCHER)
+ifeq ($(TARGET),mac)
+	rm -rf RexuizLauncher.app
+endif
 
 main.o: main.cpp launcher.h
 	$(COMPILE) $@ $<
@@ -46,7 +63,14 @@ downloader.o: downloader.cpp downloader.h fs.h
 fs.o: fs.cpp fs.h
 	$(COMPILE) $@ $<
 
-$(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o miniz.o index.o
+icon.res: icon.rc icon.ico
+	$(WINDRES) $< -O coff -o $@
+
+$(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o miniz.o index.o $(ICON)
+ifeq ($(TARGET),mac)
+	rm -rf RexuizLauncher.app/
+	cp -a RexuizLauncher.app-tmpl/ RexuizLauncher.app/
+endif
 	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS) $(LINK_OS_FLAGS)
 
 rexuiz_logo.h: rexuiz_logo.png
