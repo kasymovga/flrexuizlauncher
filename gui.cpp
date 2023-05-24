@@ -27,7 +27,7 @@ public:
 
 static void gui_close_callback(Fl_Widget *widget, void *p) {
 	Launcher *launcher = (Launcher *)p;
-	if (fl_choice("Quit now?", "No", "Yes", 0) == 1) {
+	if (fl_choice("%s", "No", "Yes", 0, "Quit now?") == 1) {
 		launcher->abort();
 		widget->hide();
 	}
@@ -82,11 +82,11 @@ bool GUI::frame() {
 }
 
 bool GUI::askYesNo(const char *question) {
-	return fl_choice(question, "No", "Yes", 0) == 1;
+	return fl_choice("%s", "No", "Yes", 0, question) == 1;
 }
 
 void GUI::error(const char *error) {
-	fl_alert(error);
+	fl_alert("%s", error);
 }
 
 void GUI::setInfo(const char *text) {
