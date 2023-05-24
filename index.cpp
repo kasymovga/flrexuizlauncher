@@ -47,7 +47,6 @@ bool Index::itemAdd(const char *line) {
 	path = new char[sep - p + 1];
 	path[sep - p] = 0;
 	memcpy(path, p, sep - p);
-	items[itemsCount];
 	memcpy(items[itemsCount].hash, hash, 32);
 	items[itemsCount].hash[32] = 0;
 	items[itemsCount].path = path;

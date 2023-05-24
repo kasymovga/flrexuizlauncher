@@ -388,7 +388,7 @@ void Launcher::execute() {
 	}
 	pipe_fileno = fileno(pf);
 #else
-	int pid, status;
+	int pid = 0, status;
 	if (pipe(pipes)) {
 		gui->error("pipe() failed");
 		goto finish;;
