@@ -426,9 +426,13 @@ finish:
 		gui->unwatchfd(pipe_fileno);
 
 #ifdef _WIN32
-	if (pf) fclose(pf);
+	if (pf)
+		fclose(pf);
 #else
-	waitpid(pid, &status, 0);
+
+	if (pid > 0)
+		waitpid(pid, &status, 0);
+
 	if (pipes[0] >= 0)
 		close(pipes[0]);
 #endif
