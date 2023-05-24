@@ -360,7 +360,7 @@ void Launcher::execute() {
 	}
 	const FSChar *args = GetCommandLineW();
 	if (*args)
-		popenStringLength += wcslen(args + 1);
+		popenStringLength += wcslen(args) + 1;
 
 	FSChar popenString[popenStringLength + 1];
 	FSChar *c2 = popenString;
