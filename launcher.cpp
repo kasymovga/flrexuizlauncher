@@ -498,7 +498,7 @@ int Launcher::run() {
 				settings.lastUpdate = epoch;
 		}
 	} else { //probably something wrong happened, force update next time
-		printf("Exited after %lli seconds, next update forced\n", (long long int)(epochExit - epoch));
+		printf("Exited after %li seconds, next update forced\n", (long int)(epochExit - epoch));
 		settings.lastUpdate = 0;
 	}
 	settings.save();
