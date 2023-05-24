@@ -432,8 +432,8 @@ finish:
 	if (pipes[0] >= 0)
 		close(pipes[0]);
 
-	if (pipes[-1] >= 0)
-		close(pipes[0]);
+	if (pipes[1] >= 0)
+		close(pipes[1]);
 #endif
 	if (executablePath)
 		delete[] executablePath;
