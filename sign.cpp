@@ -3,7 +3,6 @@
 
 #include <mbedtls/error.h>
 #include <mbedtls/md.h>
-#include <mbedtls/md_internal.h>
 #include <mbedtls/pk.h>
 #include <mbedtls/platform.h>
 #include <string.h>
