@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdlib.h>
 #ifdef _WIN32
-#include <processthreadsapi.h>
 #include <windows.h>
 #include <sysinfoapi.h>
 #else
