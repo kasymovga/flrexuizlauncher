@@ -67,7 +67,7 @@ fs.o: fs.cpp fs.h
 icon.res: icon.rc icon.ico
 	$(WINDRES) $< -O coff -o $@
 
-$(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o miniz.o index.o $(ICON)
+$(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o index.o $(ICON)
 ifeq ($(TARGET),mac)
 	rm -rf RexuizLauncher.app/
 	cp -a RexuizLauncher.app-tmpl/ RexuizLauncher.app/
@@ -86,8 +86,5 @@ rexuiz.o: rexuiz.cpp rexuiz.h fs.h
 rexuiz_pub_key.h: rexuiz_pub.key
 	xxd -n rexuiz_pub_key -i $< $@
 
-unzip.o : unzip.cpp unzip.h fs.h miniz.h
-	$(COMPILE) $@ $<
-
-miniz.o: miniz.cpp miniz.h
+unzip.o : unzip.cpp unzip.h fs.h
 	$(COMPILE) $@ $<
