@@ -47,7 +47,9 @@ extern "C" {
 			memcpy(&i->buffer[i->downloaded], (char *)data, r);
 		}
 		i->downloaded += r;
-		i->buffer[i->downloaded] = 0;
+		if (i->buffer)
+			i->buffer[i->downloaded] = 0;
+
 		return r;
 	}
 }
