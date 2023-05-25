@@ -37,7 +37,7 @@ extern "C" {
 			r = fwrite(data, size, nmemb, i->file) * size;
 		}
 		if (i->buffer) {
-			while (i->downloaded + r > i->bufferSize) {
+			while (i->downloaded + r + 1 > i->bufferSize) {
 				char *oldBuffer = i->buffer;
 				i->bufferSize *= 2;
 				i->buffer = new char[i->bufferSize];
@@ -47,6 +47,7 @@ extern "C" {
 			memcpy(&i->buffer[i->downloaded], (char *)data, r);
 		}
 		i->downloaded += r;
+		i->buffer[i->downloaded] = 0;
 		return r;
 	}
 }

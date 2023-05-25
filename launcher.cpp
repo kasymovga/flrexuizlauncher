@@ -295,7 +295,7 @@ void Launcher::repoSearch() {
 		delete[] repoCheck;
 	}
 	gui->setProgress(100);
-	if (repo) {
+	if (repo && buffer) {
 		printf("repo found: %s\n", repo);
 		newIndex.load(buffer);
 		delete[] buffer;
