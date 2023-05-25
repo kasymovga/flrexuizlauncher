@@ -55,8 +55,10 @@ void Settings::import() {
 	char *line = NULL;
 	size_t lineLength = 0;
 	ssize_t lineLengthActual;
+	printf("Trying import settings from qrexuizlauncher\n");
 	FSChar *path = FS::pathConcat(home, ".config" FS_DELIMETER_STRING "RexuizDev" FS_DELIMETER_STRING "RexuizLauncher.conf");;
 	if (!(f = FS::open(path, "r"))) goto finish;
+	printf("Parsing config file of qrexuizlauncher\n");
 	while ((lineLengthActual = getline(&line, &lineLength, f)) >= 0) {
 		if (!line[0]) continue;
 		if (line[lineLengthActual - 1] == '\n')
@@ -98,7 +100,6 @@ finish:
 	if (f) fclose(f);
 	if (path) delete[] path;
 	if (path_utf8) delete[] path_utf8;
-	if (!f) import();
 	return r;
 }
 
@@ -135,6 +136,7 @@ bool Settings::load() {
 	r = true;
 finish:
 	if (f) fclose(f);
+	else import();
 	if (path) delete[] path;
 	if (line) free(line);
 	return true;
