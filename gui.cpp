@@ -35,7 +35,8 @@ static void gui_close_callback(Fl_Widget *widget, void *p) {
 
 GUI::GUI(Launcher *launcher) {
 	priv = new GUIPrivate;
-	priv->window = new Fl_Window(340, 140);
+	priv->window = new Fl_Window(340, 140, "RexuizLauncher");
+	priv->window->position((Fl::w() - priv->window->decorated_w()) / 2, (Fl::h() - priv->window->decorated_h()) / 2);
 	priv->icon = new Fl_PNG_Image("icon", rexuiz_icon, sizeof(rexuiz_icon));
 	priv->window->icon(priv->icon);
 	priv->logo = new Fl_Box(10, 10, 320, 30, "");

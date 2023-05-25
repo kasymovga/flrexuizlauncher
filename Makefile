@@ -8,6 +8,7 @@ COMPILE_FLAGS_FLTK=`fltk-config --use-images --cflags`
 LINK_FLAGS_CURL=`pkg-config --static --libs libcurl`
 COMPILE_FLAGS_CURL=`pkg-config --cflags libcurl`
 LINK_MBEDTLS_FLAGS=-lmbedcrypto
+LINK_ZLIB_FLAGS=-lz
 UNAME := $(shell uname)
 ifeq ($(UNAME), Windows)
 TARGET ?= windows
@@ -71,7 +72,7 @@ ifeq ($(TARGET),mac)
 	rm -rf RexuizLauncher.app/
 	cp -a RexuizLauncher.app-tmpl/ RexuizLauncher.app/
 endif
-	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS) $(LINK_OS_FLAGS)
+	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS) $(LINK_ZLIB_FLAGS) $(LINK_OS_FLAGS)
 
 rexuiz_logo.h: rexuiz_logo.png
 	xxd -n rexuiz_logo -i $< $@
