@@ -69,7 +69,7 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 			#else
 			strlen
 			#endif
-			(tmp)
+			(tmp) + 1
 			];
 	strcpy(r, tmp);
 	free(tmp);
