@@ -136,10 +136,14 @@ bool Settings::load() {
 	r = true;
 finish:
 	if (f) fclose(f);
-	else import();
+	if (!r) import();
 	if (path) delete[] path;
+	#ifdef _WIN32
+	if (line) delete[] line;
+	#else
 	if (line) free(line);
-	return true;
+	#endif
+	return r;
 }
 
 Settings::Settings() {
