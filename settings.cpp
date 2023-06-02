@@ -33,7 +33,7 @@ void Settings::import() {
 #ifdef _WIN32
 	DWORD bufferSize = 1024;
 	wchar_t buffer[bufferSize];
-	if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\RexuizDev\\RexuizLauncher\\main\\install_path", NULL, RRF_RT_REG_SZ, NULL, buffer, &bufferSize) == ERROR_SUCCESS) {
+	if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\RexuizDev\\RexuizLauncher\\main", L"install_path", RRF_RT_REG_SZ, NULL, buffer, &bufferSize) == ERROR_SUCCESS) {
 		if (buffer[0])
 			installPath = FS::duplicate(buffer);
 	}
@@ -111,7 +111,7 @@ bool Settings::load() {
 	size_t lineLength = 0;
 	ssize_t lineLengthActual;
 	bool r = false;
-	if (!f) goto finish;;
+	if (!f) goto finish;
 	#ifdef _WIN32
 	lineLength = 4096;
 	line = new char[lineLength];
