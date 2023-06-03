@@ -246,6 +246,7 @@ bool FS::move(const FSChar *source, const FSChar *destination) {
 #ifdef FS_CHAR_IS_8BIT
 	return !rename(source, destination);
 #else
+	_wremove(destination); //rename in win32 required this
 	return !_wrename(source, destination);
 #endif
 }
