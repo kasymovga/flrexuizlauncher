@@ -127,6 +127,8 @@ bool Index::saveToFile(const FSChar *path) {
 	for (int i = 0; i < itemsCount; ++i) {
 		if (fprintf(file, "%s|%i|%s\n", items[i].hash, items[i].size, items[i].path) < 0) goto finish;
 	}
+	fclose(file); //file must be close before move in win32
+	file = NULL;
 	FS::move(tmpPath, path);
 	r = true;
 finish:
