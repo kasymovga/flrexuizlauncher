@@ -469,6 +469,40 @@ finish:
 		delete[] executablePath;
 }
 
+bool Launcher::checkNewVersion() {
+	FSChar *path = FS::pathConcat(installPath, "launcherupdate.txt");
+	FILE *file = FS::open(path, "rb");
+	int lineLength = 0;
+	char *line = NULL;
+	long int version;
+	bool r = false;
+	if (!file) goto finish;
+	if (FS::readLine(&line, &lineLength, file) < 0) goto finish;
+	version = atol(line);
+	if (version <= Launcher::version) goto finish;
+	if (FS::readLine(&line, &lineLength, file) < 0) goto finish;
+	if (!strchr(line, '\'') && !strchr(line, '"') && !strchr(line, '\\') && gui->askYesNo("New version of RexuizLauncher available. Open download page?")) {
+		char cmd[strlen(line) + 128];
+		#ifdef __APPLE__
+		sprintf(cmd, "nohup open -n '%s' > /dev/null 2> /dev/null &", line);
+		system(cmd);
+		r = true;
+		#else
+		#ifdef _WIN32
+		sprintf(cmd, "start \"\" \"%s\"", line);
+		#else
+		sprintf(cmd, "nohup xdg-open '%s' > /dev/null 2> /dev/null &", line);
+		system(cmd);
+		r = true;
+		#endif
+		#endif
+	}
+finish:
+	if (file) fclose(file);
+	delete[] path;
+	return r;
+}
+
 int Launcher::run() {
 	int r = 1;
 	long long int epoch, epochExit;
@@ -512,6 +546,7 @@ int Launcher::run() {
 	if (installRequired || !currentIndex.itemsCount || epoch - settings.lastUpdate > 21600)
 		update();
 
+	if (checkNewVersion()) goto finish;
 	execute();
 	#ifdef _WIN32
 	GetSystemTimeAsFileTime(&ft);

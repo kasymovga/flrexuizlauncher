@@ -13,6 +13,7 @@ public:
 	Launcher(int, char **);
 	int run();
 	void abort();
+	static const long long int version = 20220508;
 private:
 	Index currentIndex;
 	Index newIndex;
@@ -35,5 +36,6 @@ private:
 	void execute();
 	bool aborted;
 	void error(const char *message);
+	bool checkNewVersion();
 };
 #endif
