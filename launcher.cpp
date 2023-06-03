@@ -265,6 +265,35 @@ void Launcher::repoSearch() {
 	char *repoCheck;
 	const char **p;
 	const char **repos = Rexuiz::repos();
+	FSChar *repoPath = FS::pathConcat(installPath, "launcherrepos.txt");
+	FILE *f;
+	char *repoLine = NULL;
+	int repoLineSize = 0;
+	char **reposFromFile = NULL;
+	int reposFromFileSize = 0;
+	if ((f = FS::open(repoPath, "rb"))) {
+		printf("Loading repos from launcherrepos.txt\n");
+		while (FS::readLine(&repoLine, &repoLineSize, f) >= 0) {
+			if (!repoLine[0]) continue;
+			char **reposFromFileNew = new char *[reposFromFileSize + 2];
+			memcpy(reposFromFileNew, reposFromFile, sizeof(char *) * (reposFromFileSize));
+			if (reposFromFile) delete[] reposFromFile;
+			reposFromFile = reposFromFileNew;
+			reposFromFile[reposFromFileSize] = repoLine;
+			reposFromFileSize++;
+			repoLineSize = 0;
+			repoLine = NULL;
+		}
+		if (reposFromFile) {
+			reposFromFile[reposFromFileSize + 1] = NULL;
+			repos = (const char **)reposFromFile;
+		}
+		if (repoLine)
+			delete[] repoLine;
+
+		fclose(f);
+	}
+	delete[] repoPath;
 	int n = 0;
 	for (p = repos; *p; p++) n++;
 	gui->setInfo("Check repository...");
@@ -294,6 +323,7 @@ void Launcher::repoSearch() {
 		}
 		delete[] repoCheck;
 	}
+	delete reposFromFile;
 	gui->setProgress(100);
 	if (repo && buffer) {
 		printf("repo found: %s\n", repo);
