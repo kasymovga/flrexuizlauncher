@@ -53,22 +53,13 @@ void Settings::import() {
 	FILE *f = NULL;
 	const FSChar *home = getenv("HOME");
 	char *line = NULL;
-	size_t lineLength = 0;
-	ssize_t lineLengthActual;
+	int lineLength = 0;
+	int lineLengthActual;
 	printf("Trying import settings from qrexuizlauncher\n");
 	FSChar *path = FS::pathConcat(home, ".config" FS_DELIMETER_STRING "RexuizDev" FS_DELIMETER_STRING "RexuizLauncher.conf");;
 	if (!(f = FS::open(path, "r"))) goto finish;
 	printf("Parsing config file of qrexuizlauncher\n");
-	while ((lineLengthActual = getline(&line, &lineLength, f)) >= 0) {
-		if (!line[0]) continue;
-		if (line[lineLengthActual - 1] == '\n')
-			line[lineLengthActual - 1] = 0;
-
-		if (!line[0]) continue;
-		if (lineLengthActual >= 2 && line[lineLengthActual - 2] == '\r')
-			line[lineLengthActual - 2] = 0;
-
-		if (!line[0]) continue;
+	while ((lineLengthActual = FS::readLine(&line, &lineLength, f)) >= 0) {
 		if (!strncmp(line, "install_path=", 13)) {
 			if (installPath) delete[] installPath;
 			installPath = FS::fromUTF8(&line[13]);
@@ -77,7 +68,7 @@ void Settings::import() {
 	}
 finish:
 	if (path) delete[] path;
-	if (line) free(line);
+	if (line) delete[] line;
 	if (f) fclose(f);
 #endif
 #endif
@@ -108,26 +99,11 @@ bool Settings::load() {
 	const FSChar *path = settings_location();
 	FILE *f = FS::open(path, "rb");
 	char *line = NULL;
-	size_t lineLength = 0;
-	ssize_t lineLengthActual;
+	int lineLength = 0;
+	int lineLengthActual;
 	bool r = false;
 	if (!f) goto finish;
-	#ifdef _WIN32
-	lineLength = 4096;
-	line = new char[lineLength];
-	while (fgets(line, lineLength, f)) {
-		lineLengthActual = strlen(line);
-	#else
-	while ((lineLengthActual = getline(&line, &lineLength, f)) >= 0) {
-	#endif
-		if (!line[0]) continue;
-		if (line[lineLengthActual - 1] == '\n') {
-			line[lineLengthActual - 1] = 0;
-		}
-		if (!line[0]) continue;
-		if (lineLengthActual >= 2 && line[lineLengthActual - 2] == '\r') {
-			line[lineLengthActual - 2] = 0;
-		}
+	while ((lineLengthActual = FS::readLine(&line, &lineLength, f)) >= 0) {
 		if (!strncmp(line, "install_path=", 13)) {
 			if (installPath) delete[] installPath;
 			installPath = FS::fromUTF8(&line[13]);
@@ -138,11 +114,7 @@ finish:
 	if (f) fclose(f);
 	if (!r) import();
 	if (path) delete[] path;
-	#ifdef _WIN32
 	if (line) delete[] line;
-	#else
-	if (line) free(line);
-	#endif
 	return r;
 }
 

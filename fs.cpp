@@ -257,3 +257,27 @@ bool FS::remove(const FSChar *path) {
 	return !_wremove(path);
 #endif
 }
+
+int FS::readLine(char **line, int *lineSize, FILE *file) {
+	int readed = 0;
+	char c;
+	int success;
+	if (*lineSize == 0) {
+		*lineSize = 128;
+		*line = new char[*lineSize];
+	}
+	while ((success = fread(&c, 1, 1, file)) && c && c != '\n' && c != '\r') {
+		if (*lineSize <= readed + 2) {
+			*lineSize *= 2;
+			char *newLine = new char[*lineSize];
+			memcpy(newLine, *line, readed);
+			delete[] *line;
+			*line = newLine;
+		}
+		(*line)[readed] = c;
+		readed++;
+	}
+	(*line)[readed] = 0;
+	if (!success && !readed) return -1;
+	return readed;
+}

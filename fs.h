@@ -35,6 +35,7 @@ public:
 	static int size(const FSChar *path);
 	static bool move(const FSChar *source, const FSChar *destination);
 	static bool remove(const FSChar *path);
+	static int readLine(char **line, int *lineSize, FILE *file);
 };
 
 #endif
