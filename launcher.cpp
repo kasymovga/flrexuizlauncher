@@ -485,17 +485,15 @@ bool Launcher::checkNewVersion() {
 		char cmd[strlen(line) + 128];
 		#ifdef __APPLE__
 		sprintf(cmd, "nohup open -n '%s' > /dev/null 2> /dev/null &", line);
-		system(cmd);
-		r = true;
 		#else
 		#ifdef _WIN32
 		sprintf(cmd, "start \"\" \"%s\"", line);
 		#else
 		sprintf(cmd, "nohup xdg-open '%s' > /dev/null 2> /dev/null &", line);
+		#endif
+		#endif
 		system(cmd);
 		r = true;
-		#endif
-		#endif
 	}
 finish:
 	if (file) fclose(file);
