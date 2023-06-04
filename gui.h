@@ -25,6 +25,7 @@ public:
 private:
 	class GUIPrivate;
 	GUIPrivate *priv;
+	Launcher *launcher;
 };
 
 #endif

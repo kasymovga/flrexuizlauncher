@@ -58,6 +58,7 @@ GUI::GUI(Launcher *launcher) {
 	priv->window->callback(gui_close_callback, launcher);
 	priv->directoryChooser = new Fl_Native_File_Chooser();
 	priv->directoryChooser->type(Fl_Native_File_Chooser::BROWSE_DIRECTORY);
+	this->launcher = launcher;
 }
 
 bool GUI::show() {
@@ -83,7 +84,7 @@ bool GUI::frame() {
 }
 
 bool GUI::askYesNo(const char *question) {
-	return fl_choice("%s", "No", "Yes", 0, question) == 1;
+	return fl_choice("%s", launcher->translation->translate("No"), launcher->translation->translate("Yes"), 0, question) == 1;
 }
 
 void GUI::error(const char *error) {
@@ -105,7 +106,7 @@ FSChar *GUI::selectDirectory(const char *question, const FSChar *start) {
 	priv->directoryChooser->title(question);
 	priv->directoryChooser->directory(startDirectory);
 	switch (priv->directoryChooser->show()) {
-	case -1: error("Error with directory selection"); return NULL; //Error
+	case -1: error(launcher->translation->translate("Error with directory selection")); return NULL; //Error
 	case 1: return NULL; //Cancel
 	}
 	delete [] startDirectory;

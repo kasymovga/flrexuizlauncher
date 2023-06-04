@@ -5,6 +5,7 @@
 #include "settings.h"
 #include "fs.h"
 #include "index.h"
+#include "translation.h"
 
 class GUI;
 class Launcher {
@@ -14,6 +15,7 @@ public:
 	int run();
 	void abort();
 	static const long long int version = 20220508;
+	Translation *translation;
 private:
 	Index currentIndex;
 	Index newIndex;

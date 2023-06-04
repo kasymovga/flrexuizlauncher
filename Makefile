@@ -49,7 +49,7 @@ endif
 main.o: main.cpp launcher.h
 	$(COMPILE) $@ $<
 
-launcher.o: launcher.cpp launcher.h gui.h downloader.h settings.h fs.h rexuiz.h sign.h index.h
+launcher.o: launcher.cpp launcher.h gui.h downloader.h settings.h fs.h rexuiz.h sign.h index.h translation.h translation_data.h
 	$(COMPILE) $@ $<
 
 gui.o: gui.cpp gui.h rexuiz_logo.h rexuiz_icon.h
@@ -67,7 +67,7 @@ fs.o: fs.cpp fs.h
 icon.res: icon.rc icon.ico
 	$(WINDRES) $< -O coff -o $@
 
-$(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o index.o $(ICON)
+$(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings.o sign.o unzip.o index.o translation.o $(ICON)
 ifeq ($(TARGET),mac)
 	rm -rf RexuizLauncher.app/
 	cp -a RexuizLauncher.app-tmpl/ RexuizLauncher.app/
@@ -87,4 +87,10 @@ rexuiz_pub_key.h: rexuiz_pub.key
 	xxd -n rexuiz_pub_key -i $< $@
 
 unzip.o : unzip.cpp unzip.h fs.h
+	$(COMPILE) $@ $<
+
+translation_data.h: translation.txt
+	xxd -n translation_data -i $< $@
+
+translation.o: translation.cpp translation.h
 	$(COMPILE) $@ $<

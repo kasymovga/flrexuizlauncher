@@ -2,6 +2,7 @@
 #include "rexuiz.h"
 #include "sign.h"
 #include "unzip.h"
+#include "translation_data.h"
 
 #include <sys/stat.h>
 #include <stdio.h>
@@ -28,6 +29,11 @@ Launcher::Launcher(int argc, char **argv) {
 	updateFailed = false;
 	updateHappened = false;
 	updateEmpty = false;
+	char lang[3];
+	const char *langenv = getenv("LANG");
+	if (langenv) memcpy(lang, langenv, 2);
+	lang[2] = 0;
+	translation = new Translation((const char *)translation_data, translation_data_len, lang);
 }
 
 Launcher::~Launcher() {
@@ -38,6 +44,7 @@ Launcher::~Launcher() {
 		delete[] indexPath;
 
 	delete gui;
+	delete translation;
 }
 
 void Launcher::abort() {
@@ -142,10 +149,10 @@ void Launcher::update() {
 	}
 	updateHappened = true;
 	printf("Files to update: %i\n", updateIndex.itemsCount);
-	gui->setInfo("Updating...");
+	gui->setInfo(translation->translate("Updating..."));
 	gui->setProgress(0);
 	gui->setProgressSecondary(0);
-	gui->setInfoSecondary("Validating...");
+	gui->setInfoSecondary(translation->translate("Validating..."));
 	for (int i = 0; i < updateIndex.itemsCount; ++i) {
 		FSChar *path = FS::pathConcat(installPath, updateIndex.items[i].path);
 		gui->setProgress(i * 100 / updateIndex.itemsCount);
@@ -163,7 +170,7 @@ void Launcher::update() {
 	}
 	char question[256];
 	updateFailed = true;
-	snprintf(question, sizeof(question), "Update size is %i.%iMiB, install it?", totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
+	snprintf(question, sizeof(question), translation->translate("Update size is %i.%iMiB, install it?"), totalSize / (1024 * 1024), (totalSize % (1024 * 1024)) / (103 * 1024));
 	if (updateIndex.itemsCount && gui->askYesNo(question)) {
 		for (int i = 0; i < updateIndex.itemsCount; ++i) {
 			printf("Downloading %s\n", updateIndex.items[i].path);
@@ -184,12 +191,12 @@ void Launcher::update() {
 				FSChar *pathTmpGz = FS::concat(pathTmp, ".gz");
 				if ((f = FS::open(pathTmpGz, "wb"))) {
 					struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = gui, .downloader = &downloader};
-					gui->setInfoSecondary("Downloading...");
+					gui->setInfoSecondary(translation->translate("Downloading..."));
 					if (downloader.download(linkgz, launcher_downloader_progress, &d, f, NULL, NULL)) {
 						fclose(f);
 						f = NULL;
 						struct launcher_uncompress_progress_data ud = {.gui = gui};
-						gui->setInfoSecondary("Extracting...");
+						gui->setInfoSecondary(translation->translate("Extracting..."));
 						if (UnZip::uncompressFile(pathTmpGz, pathTmp, launcher_uncompress_progress, &ud) && FS::size(pathTmp) == updateIndex.items[i].size && Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
 							FS::move(pathTmp, path);
 							success = true;
@@ -205,7 +212,7 @@ void Launcher::update() {
 				if (success) continue;
 			}
 			struct launcher_downloader_progress_data d = {.expectedSize = updateIndex.items[i].size, .gui = gui, .downloader = &downloader};
-			gui->setInfoSecondary("Downloading...");
+			gui->setInfoSecondary(translation->translate("Downloading..."));
 			if (f) fclose(f);
 			if (!(f = FS::open(pathTmp, "wb"))) {
 				char message[1024];
@@ -222,11 +229,11 @@ void Launcher::update() {
 			if (downloader.download(link, launcher_downloader_progress, &d, f, NULL, NULL)) {
 				fclose(f);
 				f = NULL;
-				gui->setInfoSecondary("Validating...");
+				gui->setInfoSecondary(translation->translate("Validating..."));
 				if (FS::size(pathTmp) == updateIndex.items[i].size) {
 					if (Sign::checkFileHash(pathTmp, updateIndex.items[i].hash, 32)) {
 						if (!FS::move(pathTmp, path)) {
-							error("File saving failed");
+							error(translation->translate("File saving failed"));
 							goto finish;
 						}
 					} else {
@@ -239,7 +246,7 @@ void Launcher::update() {
 				}
 			} else {
 				printf("Downloading of %s failed\n", link);
-				error("Update failed");
+				error(translation->translate("Update failed"));
 				goto finish;
 			}
 		}
@@ -296,14 +303,14 @@ void Launcher::repoSearch() {
 	delete[] repoPath;
 	int n = 0;
 	for (p = repos; *p; p++) n++;
-	gui->setInfo("Check repository...");
+	gui->setInfo(translation->translate("Check repository..."));
 	for (p = repos; *p && !repo; p++) {
 		if (aborted) break;
 		gui->setProgress((p - repos) * 100 / n);
 		printf("checking repo: %s\n", *p);
 		repoCheck = new char[strlen(*p) + 16];
 		sprintf(repoCheck, "%s/%s", *p, "index.lst");
-		gui->setInfoSecondary("Downloading...");
+		gui->setInfoSecondary(translation->translate("Downloading..."));
 		struct launcher_downloader_progress_data d = {.expectedSize = 0, .gui = gui, .downloader = &downloader};
 		if (downloader.download(repoCheck, launcher_downloader_progress, &d, NULL, &buffer, &bufferLength)) {
 			gui->frame();
@@ -364,15 +371,15 @@ void Launcher::execute() {
 	if (updateHappened && !updateEmpty) {
 		if (!updateFailed) {
 			if (installRequired) {
-				if (!gui->askYesNo("Install finished. Run game?")) return;
+				if (!gui->askYesNo(translation->translate("Install finished. Run game?"))) return;
 			} else {
-				if (!gui->askYesNo("Update finished. Run game?")) return;
+				if (!gui->askYesNo(translation->translate("Update finished. Run game?"))) return;
 			}
 		} else if (Rexuiz::presentsInDirectory(installPath)) {
 			if (installRequired) {
-				if (!gui->askYesNo("Install failed. Try run game anyway?")) return;
+				if (!gui->askYesNo(translation->translate("Install failed. Try run game anyway?"))) return;
 			} else {
-				if (!gui->askYesNo("Update failed. Try run game anyway?")) return;
+				if (!gui->askYesNo(translation->translate("Update failed. Try run game anyway?"))) return;
 			}
 		}
 	}
@@ -481,7 +488,7 @@ bool Launcher::checkNewVersion() {
 	version = atol(line);
 	if (version <= Launcher::version) goto finish;
 	if (FS::readLine(&line, &lineLength, file) < 0) goto finish;
-	if (!strchr(line, '\'') && !strchr(line, '"') && !strchr(line, '\\') && gui->askYesNo("New version of RexuizLauncher available. Open download page?")) {
+	if (!strchr(line, '\'') && !strchr(line, '"') && !strchr(line, '\\') && gui->askYesNo(translation->translate("New version of RexuizLauncher available. Open download page?"))) {
 		char cmd[strlen(line) + 128];
 		#ifdef __APPLE__
 		sprintf(cmd, "nohup open -n '%s' > /dev/null 2> /dev/null &", line);
@@ -519,7 +526,7 @@ int Launcher::run() {
 		}
 	}
 	if (!installPath || !installPath[0]) {
-		installPath = gui->selectDirectory("Please select install location", startLocation);
+		installPath = gui->selectDirectory(translation->translate("Please select install location"), startLocation);
 	}
 	if (!installPath || !installPath[0])
 		goto finish;
