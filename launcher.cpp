@@ -223,7 +223,7 @@ void Launcher::update() {
 						#else
 						"%s"
 						#endif
-						, "Cannot open file:"
+						, translation->translate("Cannot open file:")
 						, pathTmp);
 				error(message);
 				goto finish;
@@ -514,7 +514,7 @@ int Launcher::run() {
 	int r = 1;
 	long long int epoch, epochExit;
 	gui->show();
-	gui->setInfo("Preparing");
+	gui->setInfo(translation->translate("Preparing"));
 	FSChar *startLocation = FS::getBinaryLocation(argv[0]);
 	FS::stripToParent(startLocation);
 	settings.load();
