@@ -554,6 +554,7 @@ int Launcher::run() {
 		update();
 
 	if (checkNewVersion()) goto finish;
+	if (installRequired && updateFailed) goto finish;
 	execute();
 	#ifdef _WIN32
 	GetSystemTimeAsFileTime(&ft);
