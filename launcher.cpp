@@ -30,6 +30,7 @@ Launcher::Launcher(int argc, char **argv) {
 	updateHappened = false;
 	updateEmpty = false;
 	char lang[3];
+	lang[0] = 0;
 	const char *langenv = getenv("LANG");
 	if (langenv) memcpy(lang, langenv, 2);
 	lang[2] = 0;
