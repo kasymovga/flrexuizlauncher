@@ -359,7 +359,7 @@ void launcher_execute_pipe_callback(int fd, void *data) {
 
 void Launcher::execute() {
 	int pipe_fileno = -1;
-	gui->setInfo("Running");
+	gui->setInfo(translation->translate("Running"));
 	gui->setInfoSecondary("");
 	FSChar *executablePath = NULL;
 #ifdef _WIN32
