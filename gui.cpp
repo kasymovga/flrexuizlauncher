@@ -59,6 +59,12 @@ GUI::GUI(Launcher *launcher) {
 	priv->directoryChooser = new Fl_Native_File_Chooser();
 	priv->directoryChooser->type(Fl_Native_File_Chooser::BROWSE_DIRECTORY);
 	this->launcher = launcher;
+	#if !defined(_WIN32) && !defined(__APPLE__)
+	printf("Font: %s\n", Fl::get_font(FL_HELVETICA));
+	if (!strcmp(Fl::get_font(FL_HELVETICA), "-*-helvetica-medium-r-normal--*")) {
+		Fl::set_font(FL_HELVETICA, "-*-fixed-medium-r-normal-*-*-*-*-*-*-*-iso10646-*");
+	}
+	#endif
 }
 
 bool GUI::show() {
