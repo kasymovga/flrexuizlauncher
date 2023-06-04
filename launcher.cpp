@@ -216,12 +216,13 @@ void Launcher::update() {
 			if (f) fclose(f);
 			if (!(f = FS::open(pathTmp, "wb"))) {
 				char message[1024];
-				snprintf(message, sizeof(message), "Cannot open file: "
+				snprintf(message, sizeof(message), "%s "
 						#ifdef FS_CHAR_IS_16BIT
 						"%ls"
 						#else
 						"%s"
 						#endif
+						, "Cannot open file:"
 						, pathTmp);
 				error(message);
 				goto finish;
