@@ -16,6 +16,9 @@
 #include <sys/wait.h>
 #include <time.h>
 #endif
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 Launcher::Launcher(int argc, char **argv) {
 	this->argc = argc;
@@ -30,9 +33,27 @@ Launcher::Launcher(int argc, char **argv) {
 	updateHappened = false;
 	updateEmpty = false;
 	char lang[3];
+	#ifdef _WIN32
+	TCHAR loc[80];
+	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SABBREVLANGNAME, loc, 80*sizeof(TCHAR));
+	printf("locale=%s\n", loc);
+	lang[0] = tolower(loc[0]);
+	lang[1] = tolower(loc[1]);
+	#else
+	#ifdef __APPLE__
+	CFLocaleRef locale = CFLocaleCopyCurrent();
+	CFStringRef value = (CFStringRef)CFLocaleGetValue(locale, kCFLocaleLanguageCode);
+	const char *locale_language = CFStringGetCStringPtr(value, kCFStringEncodingUTF8);
+	lang[0] = locale_language[0];
+	lang[1] = locale_language[1];
+	CFRelease(locale);
+	CFRelease(value);
+	#else
 	lang[0] = 0;
 	const char *langenv = getenv("LANG");
 	if (langenv) memcpy(lang, langenv, 2);
+	#endif
+	#endif
 	lang[2] = 0;
 	translation = new Translation((const char *)translation_data, translation_data_len, lang);
 }
