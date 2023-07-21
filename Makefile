@@ -71,6 +71,7 @@ $(FLREXUIZLAUNCHER): main.o launcher.o gui.o downloader.o rexuiz.o fs.o settings
 ifeq ($(TARGET),mac)
 	rm -rf RexuizLauncher.app/
 	cp -a RexuizLauncher.app-tmpl/ RexuizLauncher.app/
+	mkdir -m 755 -p RexuizLauncher.app/Contents/MacOS
 endif
 	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS) $(LINK_ZLIB_FLAGS) $(LINK_OS_FLAGS)
 
