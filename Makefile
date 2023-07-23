@@ -41,7 +41,7 @@ endif
 all: $(FLREXUIZLAUNCHER)
 
 clean:
-	rm -f *.o rexuiz_icon.h rexuiz_logo.h rexuiz_pub_key.h $(FLREXUIZLAUNCHER)
+	rm -f *.o rexuiz_icon.h rexuiz_logo.h rexuiz_pub_key.h $(FLREXUIZLAUNCHER) $(ICON)
 ifeq ($(TARGET),mac)
 	rm -rf RexuizLauncher.app
 endif
