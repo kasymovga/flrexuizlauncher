@@ -363,7 +363,7 @@ void Launcher::repoSearch() {
 		printf("repo not found\n");
 }
 
-void launcher_execute_pipe_callback(int fd, void *data) {
+void launcher_execute_pipe_callback(long int fd, void *data) {
 	GUI *gui = (GUI *)data;
 	char buffer[1024];
 	int n;

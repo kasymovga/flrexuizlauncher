@@ -12,6 +12,11 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Native_File_Chooser.H>
 
+struct gui_fd_callback_data {
+	void (*callback)(long int fd, void *data);
+	void *data;
+};
+
 class GUI::GUIPrivate {
 public:
 	Fl_Window *window;
@@ -23,6 +28,7 @@ public:
 	Fl_Image *logoImage;
 	Fl_RGB_Image *icon;
 	Fl_Native_File_Chooser *directoryChooser;
+	struct gui_fd_callback_data fdcallbackdata;
 };
 
 static void gui_close_callback(Fl_Widget *widget, void *p) {
@@ -142,10 +148,17 @@ void GUI::setProgressSecondary(int p) {
 	frame();
 }
 
-void GUI::watchfd(int fd, void callback(int fd, void *callback_data), void *callback_data) {
-	Fl::add_fd(fd, FL_READ | FL_EXCEPT, callback, callback_data);
+static void gui_fd_callback(FL_SOCKET s, void *data) {
+	struct gui_fd_callback_data *d = (struct gui_fd_callback_data *)data;
+	d->callback(s, d->data);
 }
 
-void GUI::unwatchfd(int fd) {
+void GUI::watchfd(long int fd, void callback(long int fd, void *callback_data), void *callback_data) {
+	priv->fdcallbackdata.callback = callback;
+	priv->fdcallbackdata.data = callback_data;
+	Fl::add_fd(fd, FL_READ | FL_EXCEPT, gui_fd_callback, &priv->fdcallbackdata);
+}
+
+void GUI::unwatchfd(long int fd) {
 	Fl::remove_fd(fd);
 }
