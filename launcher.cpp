@@ -408,7 +408,7 @@ void Launcher::execute() {
 	}
 	executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
-	int popenStringLength = 0;
+	int popenStringLength = 64;
 	for (FSChar *c = executablePath; *c; c++) {
 		popenStringLength++;
 		if (*c == L' ') popenStringLength += 2;
@@ -441,6 +441,7 @@ void Launcher::execute() {
 	} else
 		*c2 = 0;
 
+	swprintf(&c2[wcslen(c2)], 64, L" +set rexuizlauncer %li", (long int)version);
 	pf = _wpopen(popenString, L"rb");
 	if (!pf) {
 		gui->error("popen() failed");
@@ -462,12 +463,17 @@ void Launcher::execute() {
 		close(pipes[1]);
 		pipes[1] = -1;
 	} else {
-		char *argv2[argc + 1];
+		char *argv2[argc + 4];
+		char versionString[16];
+		snprintf(versionString, sizeof(versionString), "%li", (long int)version);
 		close(pipes[0]);
 		close(1);
 		dup2(pipes[1], 1);
 		memcpy(&argv2[1], &argv[1], sizeof(char *) * (argc - 1));
-		argv2[argc] = NULL;
+		argv2[argc] = (char*)"+set";
+		argv2[argc + 1] = (char*)"rexuizlauncher";
+		argv2[argc + 2] = versionString;
+		argv2[argc + 3] = NULL;
 		argv2[0] = executablePath;
 		printf("Executing...\n");
 		chmod(executablePath, 0755);
