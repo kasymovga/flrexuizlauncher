@@ -441,7 +441,7 @@ void Launcher::execute() {
 	} else
 		*c2 = 0;
 
-	swprintf(&c2[wcslen(c2)], 64, L" +set rexuizlauncer %li", (long int)version);
+	swprintf(&c2[wcslen(c2)], 64, L" +set rexuizlauncher %li", (long int)version);
 	pf = _wpopen(popenString, L"rb");
 	if (!pf) {
 		gui->error("popen() failed");
