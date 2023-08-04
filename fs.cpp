@@ -8,8 +8,35 @@
 #include <windows.h>
 #include <shlwapi.h>
 #include <io.h>
+#include <stringapiset.h>
 #else
 #include <sys/stat.h>
+#endif
+
+#ifdef _WIN32
+static int fs_wcstombs(char *str, const wchar_t *wstr, int str_size) {
+	int wstr_len = wcslen(wstr);
+	int n = WideCharToMultiByte(CP_UTF8, 0, wstr, wstr_len, str, str_size, NULL, NULL);
+	if (n < str_size)
+		str[n] = 0;
+	else {
+		str[0] = 0;
+		n = 0;
+	}
+	return n;
+}
+
+static int fs_mbstowcs(wchar_t *wstr, const char *str, int wstr_size) {
+	int str_len = strlen(str);
+	int n = MultiByteToWideChar(CP_UTF8, 0, str, str_len, wstr, wstr_size);
+	if (n < wstr_size)
+		wstr[n] = 0;
+	else {
+		wstr[0] = 0;
+		n = 0;
+	}
+	return n;
+}
 #endif
 
 char* FS::toUTF8(const FSChar *path) {
@@ -18,9 +45,9 @@ char* FS::toUTF8(const FSChar *path) {
 	strcpy(r, path);
 	return r;
 #else
-	int n = wcstombs(NULL, path, 0) + 1;
+	int n = fs_wcstombs(NULL, path, 0) + 1;
 	char *r = new char[n];
-	wcstombs(r, path, n);
+	fs_wcstombs(r, path, n);
 	return r;
 #endif
 }
@@ -32,7 +59,7 @@ FSChar* FS::fromUTF8(const char *u8) {
 #else
 	int n = strlen(u8);
 	FSChar *r = new FSChar[n + 1];
-	n = mbstowcs(r, u8, n);
+	n = fs_mbstowcs(r, u8, n);
 	if (n > 0)
 		r[n] = 0;
 	else
@@ -63,14 +90,7 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 #else
 	char *tmp = realpath(u8, NULL);
 	if (!tmp) return NULL;
-	r = new FSChar[
-			#ifdef FS_CHAR_IS_16BIT
-			wcslen
-			#else
-			strlen
-			#endif
-			(tmp) + 1
-			];
+	r = new FSChar[strlen(tmp) + 1];
 	strcpy(r, tmp);
 	free(tmp);
 	return r;
@@ -98,7 +118,7 @@ FILE *FS::open(const FSChar* path, const char *mode) {
 #else
 	int n = strlen(mode);
 	wchar_t wmode[n + 1];
-	mbstowcs(wmode, mode, n);
+	fs_mbstowcs(wmode, mode, n);
 	wmode[n] = 0;
 	return _wfopen(path, wmode);
 #endif
