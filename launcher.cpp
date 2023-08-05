@@ -3,6 +3,7 @@
 #include "sign.h"
 #include "unzip.h"
 #include "translation_data.h"
+#include "process.h"
 
 #include <sys/stat.h>
 #include <stdio.h>
@@ -384,7 +385,7 @@ void Launcher::execute() {
 	gui->setInfoSecondary("");
 	FSChar *executablePath = NULL;
 #ifdef _WIN32
-	FILE *pf = NULL;
+	void *process = NULL;
 #else
 	int pipes[2];
 	pipes[0] = -1;
@@ -442,12 +443,8 @@ void Launcher::execute() {
 		*c2 = 0;
 
 	swprintf(&c2[wcslen(c2)], 64, L" +set rexuizlauncher %li", (long int)version);
-	pf = _wpopen(popenString, L"rb");
-	if (!pf) {
-		gui->error("popen() failed");
-		goto finish;
-	}
-	pipe_fileno = fileno(pf);
+	if (!(process = Process::open(popenString))) goto finish;
+	pipe_fileno = Process::fd(process);
 #else
 	int pid = 0, status;
 	if (pipe(pipes)) {
@@ -489,8 +486,8 @@ finish:
 		gui->unwatchfd(pipe_fileno);
 
 #ifdef _WIN32
-	if (pf)
-		fclose(pf);
+	if (process)
+		Process::close(process);
 #else
 	if (pid > 0)
 		waitpid(pid, &status, 0);
