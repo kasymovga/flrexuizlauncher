@@ -38,13 +38,13 @@ finish:
 	if (f) fclose(f);
 	if (fOut) fclose(fOut);
 	if (fd >= 0)
-	if (gz) gzclose(gz);
 	#ifdef _WIN32
 		_close(fd);
 	#else
 		close(fd);
 	#endif
 
+	if (gz) gzclose(gz);
 	if (!r) FS::remove(extractPath);
 	return r;
 }
