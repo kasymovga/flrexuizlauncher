@@ -20,6 +20,7 @@ static int fs_wcstombs(char *str, const wchar_t *wstr, int str_size) {
 	if (n < str_size)
 		str[n] = 0;
 	else {
+		if (!str) return n + 1;
 		str[0] = 0;
 		n = 0;
 	}
@@ -32,6 +33,7 @@ static int fs_mbstowcs(wchar_t *wstr, const char *str, int wstr_size) {
 	if (n < wstr_size)
 		wstr[n] = 0;
 	else {
+		if (!wstr) return n + 1;
 		wstr[0] = 0;
 		n = 0;
 	}
@@ -45,7 +47,7 @@ char* FS::toUTF8(const FSChar *path) {
 	strcpy(r, path);
 	return r;
 #else
-	int n = fs_wcstombs(NULL, path, 0) + 1;
+	int n = fs_wcstombs(NULL, path, 0);
 	char *r = new char[n];
 	fs_wcstombs(r, path, n);
 	return r;
@@ -57,13 +59,9 @@ FSChar* FS::fromUTF8(const char *u8) {
 	FSChar *r = new FSChar[strlen(u8) + 1];
 	strcpy(r, u8);
 #else
-	int n = strlen(u8);
-	FSChar *r = new FSChar[n + 1];
-	n = fs_mbstowcs(r, u8, n);
-	if (n > 0)
-		r[n] = 0;
-	else
-		r[0] = 0;
+	int n = strlen(u8) +  1;
+	FSChar *r = new FSChar[n];
+	fs_mbstowcs(r, u8, n);
 #endif
 	for (FSChar *c = r; *c; ++c) {
 		if (*c == '/') *c = FS_DELIMETER;
@@ -116,10 +114,9 @@ FILE *FS::open(const FSChar* path, const char *mode) {
 #ifdef FS_CHAR_IS_8BIT
 	return fopen(path, mode);
 #else
-	int n = strlen(mode);
-	wchar_t wmode[n + 1];
+	int n = strlen(mode) + 1;
+	wchar_t wmode[n];
 	fs_mbstowcs(wmode, mode, n);
-	wmode[n] = 0;
 	return _wfopen(path, wmode);
 #endif
 }
