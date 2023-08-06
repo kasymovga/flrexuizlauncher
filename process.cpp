@@ -7,7 +7,7 @@
 #include <io.h>
 #include <fcntl.h>
 
-void* Process::open(FSChar *cmd) {
+void* Process::open(FSChar *path, FSChar *cmd) {
 	HANDLE hChildStd_OUT_Rd = NULL;
 	HANDLE hChildStd_OUT_Wr = NULL;
 	SECURITY_ATTRIBUTES saAttr;
@@ -35,7 +35,7 @@ void* Process::open(FSChar *cmd) {
 	siStartInfo.hStdOutput = hChildStd_OUT_Wr;
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
 	// Create the child process.
-	if (!CreateProcessW(NULL,
+	if (!CreateProcessW(path,
 			cmd,          // command line
 			NULL,         // process security attributes
 			NULL,         // primary thread security attributes

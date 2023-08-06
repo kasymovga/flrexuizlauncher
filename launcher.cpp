@@ -409,41 +409,17 @@ void Launcher::execute() {
 	}
 	executablePath = FS::pathConcat(installPath, Rexuiz::binary());
 #ifdef _WIN32
-	int popenStringLength = 64;
-	for (FSChar *c = executablePath; *c; c++) {
-		popenStringLength++;
-		if (*c == L' ') popenStringLength += 2;
-		else if (*c == L'"') popenStringLength += 1;
+	int argStringLength = 64 + wcslen(executablePath);
+	for (int i = 1; i < argc; i++) {
+		argStringLength += strlen(argv[i]) + 1;
 	}
-	const FSChar *args = GetCommandLineW();
-	if (*args)
-		popenStringLength += wcslen(args) + 1;
-
-	FSChar popenString[popenStringLength + 1];
-	FSChar *c2 = popenString;
-	for (FSChar *c = executablePath; *c; ++c, ++c2) {
-		if (*c == L' ') {
-			*c2 = L'"';
-			c2++;
-			*c2 = L' ';
-			c2++;
-			*c2 = L'"';
-		} else if (*c == L'"') {
-			*c2 = L'"';
-			c2++;
-			*c2 = L'"';
-		} else
-			*c2 = *c;
+	FSChar argString[argStringLength];
+	wcscpy(argString, executablePath);
+	for (int i = 1; i < argc; i++) {
+		swprintf(&argString[wcslen(argString)], strlen(argv[i]), L" %s", argv[i]);
 	}
-	if (*args) {
-		*c2 = L' ';
-		c2++;
-		wcscpy(c2, args);
-	} else
-		*c2 = 0;
-
-	swprintf(&c2[wcslen(c2)], 64, L" +set rexuizlauncher %li", (long int)version);
-	if (!(process = Process::open(popenString))) goto finish;
+	swprintf(&argString[wcslen(argString)], 64, L" +set rexuizlauncher %li", (long int)version);
+	if (!(process = Process::open(executablePath, argString))) goto finish;
 	pipe_fileno = Process::fd(process);
 #else
 	int pid = 0, status;
