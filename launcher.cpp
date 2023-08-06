@@ -392,14 +392,14 @@ void Launcher::execute() {
 	pipes[1] = -1;
 #endif
 	if (aborted) return;
-	if (updateHappened && !updateEmpty) {
+	if (updateHappened && !updateEmpty && Rexuiz::presentsInDirectory(installPath)) {
 		if (!updateFailed) {
 			if (installRequired) {
 				if (!gui->askYesNo(translation->translate("Install finished. Run game?"))) return;
 			} else {
 				if (!gui->askYesNo(translation->translate("Update finished. Run game?"))) return;
 			}
-		} else if (Rexuiz::presentsInDirectory(installPath)) {
+		} else {
 			if (installRequired) {
 				if (!gui->askYesNo(translation->translate("Install failed. Try run game anyway?"))) return;
 			} else {
@@ -551,7 +551,7 @@ int Launcher::run() {
 			installPath = FS::duplicate(settings.installPath);
 		}
 	}
-	if (!installPath || !installPath[0]) {
+	if (!installPath || !installPath[0] || !Rexuiz::presentsInDirectory(installPath)) {
 		installPath = gui->selectDirectory(translation->translate("Please select install location"), startLocation);
 	}
 	if (!installPath || !installPath[0])
