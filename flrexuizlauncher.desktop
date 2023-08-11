@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RexuizLauncher (FLTK)
+Exec=flrexuizlauncher %F
+Icon=flrexuizlauncher
+Comment=Launcher for Rexuiz
+Terminal=false
+Categories=Game;
