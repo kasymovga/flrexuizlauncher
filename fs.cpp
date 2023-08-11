@@ -81,14 +81,17 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 	for (;;) {
 		r = new FSChar[s];
 		n = GetModuleFileNameW(NULL, r, s);
-		if (!n) return 0;
-		if (n < s)
+		if (!n) {
+			delete[] r;
 			break;
+		}
+		if (n < s)
+			return r;
 
 		s *= 2;
 		delete[] r;
 	}
-	return r;
+	return FS::fromUTF8(u8);
 #else
 #ifdef __linux__
 	char *selfpath = realpath("/proc/self/exe", NULL);
