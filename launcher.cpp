@@ -523,6 +523,14 @@ int Launcher::run() {
 		*lastdot = 0;
 	}
 	#endif
+	printf("Start location: "
+			#ifdef FS_CHAR_IS_16BIT
+			"%ls"
+			#else
+			"%s"
+			#endif
+			"\n"
+			, startLocation);
 	settings.load();
 	if (Rexuiz::presentsInDirectory(startLocation)) {
 		updater = true;
