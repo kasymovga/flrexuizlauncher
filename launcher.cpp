@@ -520,7 +520,9 @@ int Launcher::run() {
 	#ifdef __APPLE__
 	char *lastdot = strrchr(startLocation, '.');
 	if (lastdot && !strcmp(lastdot, ".app/Contents/MacOS")) {
-		*lastdot = 0;
+		FS::stripToParent(startLocation);
+		FS::stripToParent(startLocation);
+		FS::stripToParent(startLocation);
 	}
 	#endif
 	printf("Start location: "
