@@ -12,6 +12,10 @@
 #else
 #include <sys/stat.h>
 #endif
+#ifdef __APPLE__
+#include <unistd.h>
+#include <libproc.h>
+#endif
 
 #ifdef _WIN32
 static int fs_wcstombs(char *str, const wchar_t *wstr, int str_size) {
@@ -86,8 +90,29 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 	}
 	return r;
 #else
+#ifdef __linux__
+	char *selfpath = realpath("/proc/self/exe", NULL);
+	if (selfpath) {
+		r = new FSChar[strlen(selfpath) + 1];
+		strcpy(r, selfpath);
+		free(selfpath);
+		return r;
+	}
+#endif
+#ifdef __APPLE__
+	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+	if (proc_pidpath(getpid(), pathbuf, sizeof(pathbuf)) > 0) {
+		r = new FSChar[strlen(pathbuf) + 1];
+		strcpy(r, pathbuf);
+		return r;
+	}
+#endif
 	char *tmp = realpath(u8, NULL);
-	if (!tmp) return NULL;
+	if (!tmp) {
+		r = new FSChar[strlen(u8) + 1];
+		strcpy(r, u8);
+		return r;
+	}
 	r = new FSChar[strlen(tmp) + 1];
 	strcpy(r, tmp);
 	free(tmp);

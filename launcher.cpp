@@ -517,6 +517,12 @@ int Launcher::run() {
 	gui->setInfo(translation->translate("Preparing"));
 	FSChar *startLocation = FS::getBinaryLocation(argv[0]);
 	FS::stripToParent(startLocation);
+	#ifdef __APPLE__
+	char *lastdot = strrchr(startLocation, '.');
+	if (lastdot && !strcmp(lastdot, ".app/Contents/MacOS")) {
+		*lastdot = 0;
+	}
+	#endif
 	settings.load();
 	if (Rexuiz::presentsInDirectory(startLocation)) {
 		updater = true;
