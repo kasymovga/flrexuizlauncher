@@ -124,6 +124,7 @@ FSChar* FS::getBinaryLocation(const char *u8) {
 }
 
 void FS::stripToParent(FSChar* path) {
+	if (!path[0]) return;
 	FSChar *last_delimeter =
 #ifdef FS_CHAR_IS_8BIT
 			strrchr
@@ -134,7 +135,8 @@ void FS::stripToParent(FSChar* path) {
 	if (last_delimeter) {
 		last_delimeter[0] = 0;
 	} else {
-		path[0] = 0;
+		path[0] = '.';
+		path[1] = 0;
 	}
 }
 
