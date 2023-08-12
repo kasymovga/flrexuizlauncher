@@ -1,7 +1,7 @@
 WINDRES=windres
 CXX=c++
 CC=cc
-LINK_FLAGS_EXTRA?=
+LINK_FLAGS_EXTRA ?=
 COMPILE=$(CXX) $(CXXFLAGS) -Wall -std=c++03 -c -o
 LINK=$(CXX) $(LDFLAGS) $(LINK_FLAGS_EXTRA) -static-libstdc++ -s -o
 LINK_FLAGS_FLTK=`fltk-config --use-images --ldflags`
