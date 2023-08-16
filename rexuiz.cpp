@@ -1,6 +1,13 @@
 #include "rexuiz.h"
 
 #include <cstddef>
+#ifdef _WIN32
+#ifndef _WIN64
+#include <windows.h>
+
+typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
+#endif
+#endif
 
 const FSChar *Rexuiz::binary() {
 #ifdef __linux__
@@ -18,6 +25,11 @@ const FSChar *Rexuiz::binary() {
 	return L"rexuiz-sdl-x86_64.exe";
 #else
 #ifdef _WIN32
+	BOOL bIsWow64 = FALSE;
+	LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
+	if (fnIsWow64Process && fnIsWow64Process(GetCurrentProcess(), &bIsWow64) && bIsWow64)
+		return L"rexuiz-sdl-x86_64.exe";
+
 	return L"rexuiz-sdl-i686.exe";
 #endif
 #endif
