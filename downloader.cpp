@@ -83,6 +83,7 @@ bool Downloader::download(const char *url, void progress(void *data, int bytes, 
 	curl_easy_setopt(priv->curl, CURLOPT_WRITEDATA, (void *) &i);
 	curl_easy_setopt(priv->curl, CURLOPT_NOPROGRESS, 0L);
 	curl_easy_setopt(priv->curl, CURLOPT_SSL_VERIFYPEER, 0L);
+	curl_easy_setopt(priv->curl, CURLOPT_CONNECTTIMEOUT, 5L);
 	res = curl_easy_perform(priv->curl);
 	long http_code = 0;
 	if (res == CURLE_OK) {
