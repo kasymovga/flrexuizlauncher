@@ -22,7 +22,7 @@ install -m 644 rexuiz_icon.png deb/flrexuizlauncher/usr/share/icons/hicolor/128x
 mkdir -p -m 755 deb/flrexuizlauncher/DEBIAN
 cat > deb/flrexuizlauncher/DEBIAN/control << EOF
 Package: flrexuizlauncher
-Version: 2023.08.11
+Version: 2023.08.27
 Section: games
 Priority: optional
 Architecture: $ARCH

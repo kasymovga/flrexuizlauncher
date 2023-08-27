@@ -14,7 +14,7 @@ public:
 	Launcher(int, char **);
 	int run();
 	void abort();
-	static const long long int version = 20220508;
+	static const long long int version = 20230827;
 	Translation *translation;
 private:
 	Index currentIndex;

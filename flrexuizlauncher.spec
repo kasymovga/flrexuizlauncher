@@ -1,5 +1,5 @@
 Name: flrexuizlauncher
-Version: 2023.08.11
+Version: 2023.08.27
 Release: 1
 Summary: FLRexuizLauncher
 License: WTFPL
