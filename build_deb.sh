@@ -1,5 +1,5 @@
 ARCH=$1
-VERSION=2023.08.11
+VERSION=2023.09.10
 rm -rf deb/flrexuizlauncher
 test -z "$ARCH" && ARCH=`uname -m`
 case "$ARCH" in
