@@ -42,13 +42,21 @@ Launcher::Launcher(int argc, char **argv) {
 	lang[1] = tolower(loc[1]);
 	#else
 	#ifdef __APPLE__
+	lang[0] = 'u';
+	lang[1] = 's';
 	CFLocaleRef locale = CFLocaleCopyCurrent();
-	CFStringRef value = (CFStringRef)CFLocaleGetValue(locale, kCFLocaleLanguageCode);
-	const char *locale_language = CFStringGetCStringPtr(value, kCFStringEncodingUTF8);
-	lang[0] = locale_language[0];
-	lang[1] = locale_language[1];
-	CFRelease(locale);
-	CFRelease(value);
+	if (locale) {
+		CFStringRef value = (CFStringRef)CFLocaleGetValue(locale, kCFLocaleLanguageCode);
+		if (value) {
+			const char *locale_language = CFStringGetCStringPtr(value, kCFStringEncodingUTF8);
+			if (locale_language) {
+				lang[0] = locale_language[0];
+				lang[1] = locale_language[1];
+			}
+			CFRelease(value);
+		}
+		CFRelease(locale);
+	}
 	#else
 	lang[0] = 0;
 	const char *langenv = getenv("LANG");
