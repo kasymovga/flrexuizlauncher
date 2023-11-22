@@ -1,9 +1,9 @@
 WINDRES=windres
 CXX=c++
 CC=cc
-LINK_FLAGS_EXTRA ?=
+STRIP=strip
 COMPILE=$(CXX) $(CXXFLAGS) -Wall -std=c++03 -c -o
-LINK=$(CXX) $(LDFLAGS) $(LINK_FLAGS_EXTRA) -static-libstdc++ -s -o
+LINK=$(CXX) $(LDFLAGS) $(LINK_FLAGS_EXTRA) -o
 LINK_FLAGS_FLTK=`fltk-config --use-images --ldflags`
 COMPILE_FLAGS_FLTK=`fltk-config --use-images --cflags`
 LINK_FLAGS_CURL=`pkg-config --static --libs libcurl`
@@ -78,6 +78,7 @@ ifeq ($(TARGET),mac)
 	mkdir -m 755 -p RexuizLauncher.app/Contents/MacOS
 endif
 	$(LINK) $@ $^ $(LINK_FLAGS_FLTK) $(LINK_FLAGS_CURL) $(LINK_MBEDTLS_FLAGS) $(LINK_ZLIB_FLAGS) $(LINK_OS_FLAGS)
+	$(STRIP) $@
 
 rexuiz_logo.h: rexuiz_logo.png
 	xxd -n rexuiz_logo -i $< $@
