@@ -1,36 +1,54 @@
 :Cannot get installation data
+nl:De installatiebestanden kunnen niet worden opgehaald
 ru:Не удаётся получить установочные данные
 :Updating...
+nl:Bezig met bijwerken…
 ru:Обновление...
 :Validating...
+nl:Bezig met verifiëren…
 ru:Проверка...
 :Update size is %i.%iMiB, install it?
+nl:De update is %i.%iMiB. Wil je deze installeren?
 ru:Размер обновления %i.%i МиБ, установить?
 :Downloading...
+nl:Bezig met downloaden…
 ru:Загрузка...
 :Extracting...
+nl:Bezig met uitpakken…
 ru:Извлечение...
 :New version of RexuizLauncher available. Open download page?
+nl:Er is een nieuwe versie van RexuizLauncher beschikbaar. Wil je de downloadpagina openen?
 ru:Новая версия RexuizLauncher доступна. Открыть страницу загрузки?
 :Yes
+nl:Ja
 ru:Да
 :No
+nl:Nee
 ru:Нет
 :Check repository...
+nl:Controleer de pakketbron…
 ru:Проверка репозитория...
 :Please select install location
+nl:Kies een installatielocatie
 ru:Выберите место установки
 :Install finished. Run game?
+nl:De installatie is afgerond. Wil je Rexuiz starten?
 ru:Установка завершена. Запустить игру?
 :Update finished. Run game?
+nl:De update is geïnstalleerd. Wil je Rexuiz starten?
 ru:Обновление завершено. Запустить игру?
 :Install failed. Try run game anyway?
+nl:De installatie is mislukt. Wil je Rexuiz tóch starten?
 ru:Установка завершилась с ошибкой. Попробовать запустить игру всё равно?
 :Update failed. Try run game anyway?
+nl:Het bijwerken is mislukt. Wil je Rexuiz tóch starten?
 ru:Обновление завершилась с ошибкой. Попробовать запустить игру всё равно?
 :Cannot open file:
+nl:Kan bestand niet openen:
 ru:Не удалось открыть файл:
 :Running
+nl:Aan het uitvoeren
 ru:Запуск
 :Preparing
+nl:Aan het voorbereiden
 ru:Подготовка
