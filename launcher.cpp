@@ -574,7 +574,7 @@ int Launcher::run() {
 	#else
 	epoch = time(NULL);
 	#endif
-	if (installRequired || !currentIndex.itemsCount || epoch - settings.lastUpdate > 21600)
+	if (installRequired || !currentIndex.itemsCount || epoch - settings.lastUpdate > 21600 || epoch < settings.lastUpdate)
 		update();
 
 	if (checkNewVersion()) goto finish;
@@ -588,12 +588,10 @@ int Launcher::run() {
 	#endif
 	printf("Saving settings\n");
 	if (epochExit - epoch > 30) {
-		if (updateHappened) {
-			if (updateFailed)
-				settings.lastUpdate = 0;
-			else
-				settings.lastUpdate = epoch;
-		}
+		if (updateEmpty) //up to date
+			settings.lastUpdate = epoch;
+		else if (updateHappened)
+			settings.lastUpdate = 0;
 	} else { //probably something wrong happened, force update next time
 		printf("Exited after %li seconds, next update forced\n", (long int)(epochExit - epoch));
 		settings.lastUpdate = 0;
