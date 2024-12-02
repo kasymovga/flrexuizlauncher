@@ -108,6 +108,9 @@ bool Settings::load() {
 			if (installPath) delete[] installPath;
 			installPath = FS::fromUTF8(&line[13]);
 		}
+		if (!strncmp(line, "last_update=", 12)) {
+			lastUpdate = atol(&line[12]);
+		}
 	}
 	r = true;
 finish:
