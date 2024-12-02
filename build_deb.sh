@@ -1,5 +1,5 @@
 ARCH=$1
-VERSION=2023.09.10
+VERSION=2024.12.02
 rm -rf deb/flrexuizlauncher
 test -z "$ARCH" && ARCH=`uname -m`
 case "$ARCH" in
@@ -22,7 +22,7 @@ install -m 644 rexuiz_icon.png deb/flrexuizlauncher/usr/share/icons/hicolor/128x
 mkdir -p -m 755 deb/flrexuizlauncher/DEBIAN
 cat > deb/flrexuizlauncher/DEBIAN/control << EOF
 Package: flrexuizlauncher
-Version: 2023.08.27
+Version: 2024.12.02
 Section: games
 Priority: optional
 Architecture: $ARCH
