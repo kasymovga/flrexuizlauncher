@@ -76,20 +76,23 @@ finish:
 
 bool Settings::save() {
 	const FSChar *path = settings_location();
+	const FSChar *pathTemp = FS::concat(path, ".tmp");
 	FS::directoryMakeFor(path);
 	bool r = false;
-	FILE *f = FS::open(path, "wb");
+	FILE *f = FS::open(pathTemp, "wb");
 	const char *path_utf8 = NULL;
 	if (!f) goto finish;
 	if (installPath) {
 		path_utf8 = FS::toUTF8(this->installPath);
-		fprintf(f, "install_path=%s\n", path_utf8);
-		fprintf(f, "last_update=%lli\n", lastUpdate);
+		if (fprintf(f, "install_path=%s\n", path_utf8) < 0) goto finish;
+		if (fprintf(f, "last_update=%lli\n", lastUpdate) < 0) goto finish;
 	}
+	FS::move(pathTemp, path);
 	r = true;
 finish:
 	if (f) fclose(f);
 	if (path) delete[] path;
+	if (pathTemp) delete[] pathTemp;
 	if (path_utf8) delete[] path_utf8;
 	return r;
 }
