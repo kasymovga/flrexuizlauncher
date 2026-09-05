@@ -10,11 +10,11 @@ Launcher application for Rexuiz
 %install
 rm -ifr %{buildroot}
 mkdir -p -m 755 %{buildroot}/usr/bin/
-install -m 755 flrexuizlauncher %{buildroot}/usr/bin/flrexuizlauncher
+install -m 755 %{flrldir}/flrexuizlauncher %{buildroot}/usr/bin/flrexuizlauncher
 mkdir -p -m 755 %{buildroot}/usr/share/applications
-install -m 644 flrexuizlauncher.desktop %{buildroot}/usr/share/applications/flrexuizlauncher.desktop
+install -m 644 %{flrldir}/flrexuizlauncher.desktop %{buildroot}/usr/share/applications/flrexuizlauncher.desktop
 mkdir -p -m 755 %{buildroot}/usr/share/icons/hicolor/128x128/apps/
-install -m 644 rexuiz_icon.png %{buildroot}/usr/share/icons/hicolor/128x128/apps/flrexuizlauncher.png
+install -m 644 %{flrldir}/rexuiz_icon.png %{buildroot}/usr/share/icons/hicolor/128x128/apps/flrexuizlauncher.png
 
 %clean
 rm -ifr %{buildroot}
