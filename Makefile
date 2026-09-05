@@ -81,22 +81,30 @@ endif
 	$(STRIP) $@
 
 rexuiz_logo.h: rexuiz_logo.png
-	xxd -n rexuiz_logo -i $< $@
+	cp $< rexuiz_logo
+	xxd -i rexuiz_logo $@
+	rm -f rexuiz_logo
 
 rexuiz_icon.h: rexuiz_icon.png
-	xxd -n rexuiz_icon -i $< $@
+	cp $< rexuiz_icon
+	xxd -i rexuiz_icon $@
+	rm -f rexuiz_icon
 
 rexuiz.o: rexuiz.cpp rexuiz.h fs.h
 	$(COMPILE) $@ $<
 
 rexuiz_pub_key.h: rexuiz_pub.key
-	xxd -n rexuiz_pub_key -i $< $@
+	cp $< rexuiz_pub_key
+	xxd -i rexuiz_pub_key $@
+	rm -f rexuiz_pub_key
 
 unzip.o : unzip.cpp unzip.h fs.h
 	$(COMPILE) $@ $<
 
 translation_data.h: translation.txt
-	xxd -n translation_data -i $< $@
+	cp $< translation_data
+	xxd -i translation_data $@
+	rm -f translation_data
 
 translation.o: translation.cpp translation.h
 	$(COMPILE) $@ $<
